@@ -1,12 +1,11 @@
 from odoo import models, fields, api
-import zipfile
-import os
+from odoo.exceptions import UserError
 
 class XRecepcionFacturas(models.Model):
     _name = 'x_recepcion_facturas'
     _description = 'Recepción de Facturas'
 
-    x_name = fields.Char(string='Descripcion')
+    x_name = fields.Char(string='Nombre')
     message_ids = fields.One2many('mail.message', 'res_id', string='Messages', domain=[('model', '=', 'x_recepcion_facturas')])
 
     @api.model
@@ -31,11 +30,5 @@ class XRecepcionFacturas(models.Model):
         ])
 
         if attachments:
-            # Si encontramos un archivo ZIP, lo registramos en el log
-            _logger = self.env['ir.logging'].create({
-                'name': 'Zip Attachment Found',
-                'type': 'server',
-                'dbname': self._cr.dbname,
-                'message': f'ZIP file found in the attachments of {self.x_name}',
-                'level': 'INFO'
-            })
+            # Si encontramos un archivo ZIP, mostramos una ventana emergente con error
+            raise UserError(f"Se ha encontrado un archivo ZIP adjunto en el registro '{self.x_name}'. No se permite esta acción.")
