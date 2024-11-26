@@ -40,6 +40,7 @@ class XRecepcionFacturas(models.Model):
         # Si no se encuentran archivos ZIP, lo indicamos en los logs
         if not attachments:
             _logger.info("No ZIP attachments found.")
+            raise UserError("no adjuntos")
         else:
             # Si se encuentra un archivo ZIP, procesamos cada adjunto
             for attachment in attachments:
