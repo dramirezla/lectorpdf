@@ -16,7 +16,7 @@ class XRecepcionFacturas(models.Model):
     def write(self, values):
         # Log para verificar si se ejecuta el método write
         _logger.info(f"Executing write with values: {values}")
-        
+        raise UserError("cambios")
         # Verificamos si x_studio_validar ha sido modificado
         if 'x_studio_validar' in values:
             _logger.info(f"Detected change in 'x_studio_validar', checking for ZIP attachments.")
