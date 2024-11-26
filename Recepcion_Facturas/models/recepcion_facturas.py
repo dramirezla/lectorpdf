@@ -10,6 +10,7 @@ class XRecepcionFacturas(models.Model):
 
     def write(self, values):
         """ Sobrescribir el método write para verificar los adjuntos cuando el campo 'x_studio_validar' cambie """
+        raise UserError('escribir')
         if 'x_studio_validar' in values:
             # Verifica si el valor de 'x_studio_validar' ha cambiado
             if values['x_studio_validar']:
