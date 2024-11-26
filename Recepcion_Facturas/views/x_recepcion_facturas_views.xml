@@ -1,12 +1,12 @@
 <odoo>
     <record id="view_x_recepcion_facturas_form" model="ir.ui.view">
-        <field name="name">x_recepcion_facturas.form</field>
+        <field name="x_name">x_recepcion_facturas.form</field>
         <field name="model">x_recepcion_facturas</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
                     <group>
-                        <field name="name"/>
+                        <field name="x_name"/>
                         <field name="message_attachment_ids" widget="many2many_binary"/>
                     </group>
                 </sheet>
@@ -15,11 +15,11 @@
     </record>
 
     <record id="view_x_recepcion_facturas_tree" model="ir.ui.view">
-        <field name="name">x_recepcion_facturas.tree</field>
+        <field name="x_name">x_recepcion_facturas.tree</field>
         <field name="model">x_recepcion_facturas</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="name"/>
+                <field name="x_name"/>
             </tree>
         </field>
     </record>
