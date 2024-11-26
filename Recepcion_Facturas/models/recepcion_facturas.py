@@ -10,12 +10,14 @@ class XRecepcionFacturas(models.Model):
 
     def write(self, values):
         """ Sobrescribir el método write para verificar los adjuntos cuando el campo 'x_studio_validar' cambie """
-        raise UserError('escribir')
-        if 'x_studio_validar' in values:
-            # Verifica si el valor de 'x_studio_validar' ha cambiado
-            if values['x_studio_validar']:
-                self._check_attachments()
-        return super(XRecepcionFacturas, self).write(values)
+        # Llamar a la implementación original de write para asegurarse de que los valores se registren correctamente
+        res = super(XRecepcionFacturas, self).write(values)
+
+        # Verifica si el campo 'x_studio_validar' ha cambiado
+        if 'x_studio_validar' in values and values['x_studio_validar']:
+            self._check_attachments()
+
+        return res
 
     def _check_attachments(self):
         """ Verifica si hay archivos adjuntos en los mensajes internos del registro """
