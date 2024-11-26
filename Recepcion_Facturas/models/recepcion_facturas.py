@@ -9,7 +9,7 @@ class RecepcionFacturas(models.Model):
     _inherit = ['mail.thread']
     _description = 'Recepción de Facturas'
 
-    name = fields.Char(string="Nombre", required=True, track_visibility='onchange')
+    x_name = fields.Char(string="Nombre", required=True, track_visibility='onchange')
     message_attachment_ids = fields.One2many('ir.attachment', 'res_id', string="Archivos Adjuntos", domain=[('res_model', '=', 'x_recepcion_facturas')])
 
     @api.model
@@ -101,6 +101,6 @@ class RecepcionFacturas(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        if 'x_name' in vals:
-            self._procesar_adjuntos(self)
+        if 'x_name' in vals:  # Corregido para verificar el campo 'x_name'
+            self._procesar_adjuntos(self)  # Llamar al proceso de adjuntos
         return result
