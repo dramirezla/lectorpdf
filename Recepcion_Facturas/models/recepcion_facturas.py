@@ -1,6 +1,6 @@
-
 import base64
 import zipfile
+import io
 from odoo import models, fields, api
 from xml.etree import ElementTree as ET
 
@@ -32,7 +32,6 @@ class RecepcionFacturas(models.Model):
             'partner_id': datos_factura['partner_id'],
             'invoice_date': datos_factura['invoice_date'],
             'invoice_line_ids': datos_factura['invoice_line_ids'],
-            'amount_total': datos_factura['total'],
         })
 
     def _leer_datos_xml(self, tree):
@@ -77,8 +76,7 @@ class RecepcionFacturas(models.Model):
         return {
             'partner_id': partner.id,
             'invoice_date': invoice_date,
-            'total': float(total_amount),
-            'invoice_line_ids': invoice_lines
+            'invoice_line_ids': invoice_lines,
         }
 
     @api.model
