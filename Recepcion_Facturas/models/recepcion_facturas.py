@@ -1,67 +1,44 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-import logging
-import zipfile
-import io
-
-_logger = logging.getLogger(__name__)
 
 class XRecepcionFacturas(models.Model):
     _name = 'x_recepcion_facturas'
-    _description = 'Recepción de Facturas'
+    _inherit = ['mail.thread', 'mail.activity.mixin']  # Inheriting to use messages and attachments
 
-    x_name = fields.Char(string='Nombre')
-    x_studio_validar = fields.Boolean(string='Validar')  # Verifica si este campo existe
+    name = fields.Char(string='Factura')
+    x_studio_validar = fields.Boolean(string="Validar", track_visibility='onchange')
+    
+    @api.model
+    def create(self, vals):
+        record = super(XRecepcionFacturas, self).create(vals)
+        record._check_attachments()
+        return record
 
-    def write(self, values):
-        # Log para verificar si se ejecuta el método write
-        _logger.info(f"Executing write with values: {values}")
-        raise UserError("cambios")
-        # Verificamos si x_studio_validar ha sido modificado
-        if 'x_studio_validar' in values:
-            _logger.info(f"Detected change in 'x_studio_validar', checking for ZIP attachments.")
-            self.check_zip_attachment()  # Ejecutamos la comprobación si x_studio_validar ha cambiado
-        
-        # Ejecutamos el método estándar de escritura
-        res = super(XRecepcionFacturas, self).write(values)
-        return res
+    @api.onchange('x_studio_validar')
+    def _onchange_x_studio_validar(self):
+        # Verifica si hay adjuntos cuando cambia el campo x_studio_validar
+        raise UserError('chequear')
+        if self.x_studio_validar:
+            self._check_attachments()
 
-    def check_zip_attachment(self):
-        # Log para indicar que estamos comprobando los adjuntos
-        _logger.info(f"Checking ZIP attachment for record '{self.x_name}' (ID: {self.id})")
-        
-        # Buscamos adjuntos de tipo ZIP relacionados con este registro
-        attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', self._name),
-            ('res_id', '=', self.id),
-            ('mimetype', '=', 'application/zip')
+    def _check_attachments(self):
+        """ Verifica si hay archivos adjuntos en los mensajes internos del registro """
+        attachments = self.env['mail.attachment'].search([
+            ('res_model', '=', 'x_recepcion_facturas'),
+            ('res_id', '=', self.id)
         ])
 
-        # Si no se encuentran archivos ZIP, lo indicamos en los logs
         if not attachments:
-            _logger.info("No ZIP attachments found.")
-            raise UserError("no adjuntos")
-        else:
-            # Si se encuentra un archivo ZIP, procesamos cada adjunto
-            for attachment in attachments:
-                _logger.info(f"Found ZIP attachment: {attachment.name}, MimeType: {attachment.mimetype}")
-                
-                try:
-                    # Intentamos abrir y verificar si el archivo ZIP es válido
-                    with zipfile.ZipFile(io.BytesIO(attachment.datas), 'r') as zip_ref:
-                        zip_ref.testzip()  # Verificar si el ZIP es válido
-                        _logger.info(f"ZIP file '{attachment.name}' is valid.")
-                        
-                        # Aquí puedes agregar código adicional para procesar el archivo XML dentro del ZIP
-                        
-                except zipfile.BadZipFile:
-                    # Si el archivo no es un ZIP válido, lanzamos un error
-                    _logger.error(f"Bad ZIP file: {attachment.name}")
-                    raise UserError(f"El archivo adjunto '{attachment.name}' no es un archivo ZIP válido.")
-                except Exception as e:
-                    # Si ocurre otro error, lo registramos y lanzamos un error
-                    _logger.error(f"Error processing ZIP file '{attachment.name}': {str(e)}")
-                    raise UserError(f"Hubo un error al procesar el archivo ZIP adjunto '{attachment.name}': {str(e)}")
-            
-            # Si se ha encontrado un archivo ZIP, mostramos un mensaje de error
-            raise UserError(f"Se ha encontrado un archivo ZIP adjunto en el registro '{self.x_name}'. No se permite esta acción.")
+            raise UserError('No se encontraron adjuntos en los mensajes internos.')
+
+        # Si quieres hacer algo más con los archivos adjuntos, puedes agregarlos aquí
+        # Por ejemplo, descomprimir archivos zip o procesar archivos XML
+        for attachment in attachments:
+            if attachment.mimetype == 'application/zip':
+                self._process_zip_attachment(attachment)
+
+    def _process_zip_attachment(self, attachment):
+        """ Procesar archivo zip adjunto """
+        # Aquí puedes agregar la lógica para descomprimir el archivo zip
+        # y extraer un archivo XML, por ejemplo:
+        pass
