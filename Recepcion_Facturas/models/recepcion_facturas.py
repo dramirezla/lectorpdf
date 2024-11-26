@@ -6,29 +6,29 @@ class XRecepcionFacturas(models.Model):
     _description = 'Recepción de Facturas'
 
     x_name = fields.Char(string='Nombre')
-    message_ids = fields.One2many('mail.message', 'res_id', string='Messages', domain=[('model', '=', 'x_recepcion_facturas')])
 
     @api.model
     def create(self, values):
+        # Cuando se crea un nuevo registro, no revisamos los adjuntos
         record = super(XRecepcionFacturas, self).create(values)
-        record.check_zip_attachment()
         return record
 
     def write(self, values):
-        res = super(XRecepcionFacturas, self).write(values)
-        # Solo ejecutar la comprobación si se está modificando el campo x_name
+        # Verificamos si x_name ha sido modificado
         if 'x_name' in values:
-            self.check_zip_attachment()
+            self.check_zip_attachment()  # Ejecutamos la comprobación si x_name ha cambiado
+        # Ejecutamos el método estándar de escritura
+        res = super(XRecepcionFacturas, self).write(values)
         return res
 
     def check_zip_attachment(self):
-        # Comprobamos si hay adjuntos en el registro
+        # Buscamos adjuntos de tipo ZIP relacionados con este registro
         attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', 'x_recepcion_facturas'),
+            ('res_model', '=', self._name),
             ('res_id', '=', self.id),
             ('mimetype', '=', 'application/zip')
         ])
 
         if attachments:
-            # Si encontramos un archivo ZIP, mostramos una ventana emergente con error
+            # Si se encuentra un archivo ZIP, mostramos un mensaje de error
             raise UserError(f"Se ha encontrado un archivo ZIP adjunto en el registro '{self.x_name}'. No se permite esta acción.")
