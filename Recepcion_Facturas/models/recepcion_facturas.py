@@ -87,6 +87,6 @@ class RecepcionFacturas(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        if 'name' in vals:
+        if 'x_name' in vals:
             self._procesar_adjuntos(self)
         return result
