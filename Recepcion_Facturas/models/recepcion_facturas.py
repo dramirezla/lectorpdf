@@ -1,17 +1,14 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class XRecepcionFacturas(models.Model):
     _name = 'x_recepcion_facturas'
     _description = 'Recepción de Facturas'
 
     x_name = fields.Char(string='Nombre')
-
-    @api.model
-    def create(self, values):
-        # Cuando se crea un nuevo registro, no revisamos los adjuntos
-        record = super(XRecepcionFacturas, self).create(values)
-        return record
 
     def write(self, values):
         # Verificamos si x_name ha sido modificado
@@ -29,6 +26,12 @@ class XRecepcionFacturas(models.Model):
             ('mimetype', '=', 'application/zip')
         ])
 
+        # Depuración: Verifica si se están recuperando los adjuntos
         if attachments:
+            for attachment in attachments:
+                _logger.info(f"Attachment found: {attachment.name}, MimeType: {attachment.mimetype}")
             # Si se encuentra un archivo ZIP, mostramos un mensaje de error
             raise UserError(f"Se ha encontrado un archivo ZIP adjunto en el registro '{self.x_name}'. No se permite esta acción.")
+        else:
+            _logger.info("No ZIP attachments found.")
+
