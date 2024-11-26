@@ -3,6 +3,9 @@ import zipfile
 import io
 from odoo import models, fields, api
 from xml.etree import ElementTree as ET
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class RecepcionFacturas(models.Model):
     _name = 'x_recepcion_facturas'
@@ -14,17 +17,37 @@ class RecepcionFacturas(models.Model):
 
     @api.model
     def _procesar_adjuntos(self, record):
+        # Verificar si el registro tiene adjuntos
         attachments = record.message_attachment_ids
+        if not attachments:
+            _logger.warning("No se encontraron adjuntos para el registro %s", record.id)
+            return
+
         for attachment in attachments:
+            # Verificar que el adjunto es un archivo ZIP
             if attachment.mimetype == 'application/zip':
+                _logger.info("Procesando archivo ZIP: %s", attachment.name)
                 zip_content = base64.b64decode(attachment.datas)
-                with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
-                    for file_name in z.namelist():
-                        if file_name.endswith('.xml'):
-                            with z.open(file_name) as xml_file:
-                                xml_content = xml_file.read()
-                                self._guardar_xml_como_adjunto(record, file_name, xml_content)
-                                self._crear_factura_desde_xml(xml_content)
+                try:
+                    with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
+                        # Verificar que el archivo ZIP contiene archivos
+                        file_names = z.namelist()
+                        if not file_names:
+                            _logger.warning("El archivo ZIP no contiene archivos: %s", attachment.name)
+                            continue
+                        
+                        for file_name in file_names:
+                            # Verificar que el archivo es un XML
+                            if file_name.endswith('.xml'):
+                                _logger.info("Procesando archivo XML: %s", file_name)
+                                with z.open(file_name) as xml_file:
+                                    xml_content = xml_file.read()
+                                    self._guardar_xml_como_adjunto(record, file_name, xml_content)
+                                    self._crear_factura_desde_xml(xml_content)
+                except zipfile.BadZipFile:
+                    _logger.error("El archivo adjunto no es un ZIP válido: %s", attachment.name)
+                except Exception as e:
+                    _logger.error("Error al procesar archivo ZIP: %s", e)
 
     def _guardar_xml_como_adjunto(self, record, file_name, xml_content):
         """Guardar el XML como archivo adjunto."""
