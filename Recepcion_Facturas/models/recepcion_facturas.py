@@ -12,7 +12,7 @@ class XRecepcionFacturas(models.Model):
 
     def write(self, values):
         # Verificamos si x_name ha sido modificado
-        if 'x_name' in values:
+        if 'x_studio_validar' in values:
             self.check_zip_attachment()  # Ejecutamos la comprobación si x_name ha cambiado
         # Ejecutamos el método estándar de escritura
         res = super(XRecepcionFacturas, self).write(values)
