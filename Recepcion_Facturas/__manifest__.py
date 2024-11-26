@@ -7,7 +7,6 @@
     'depends': ['base', 'mail', 'account'],
     'license': 'LGPL-3',
     'data': [
-        'views/x_recepcion_facturas_views.xml',
     ],
     'installable': True,
     'application': False,
