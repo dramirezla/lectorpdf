@@ -10,6 +10,7 @@ class RecepcionFacturas(models.Model):
     _description = 'Recepción de Facturas'
 
     name = fields.Char(string="Nombre", required=True, track_visibility='onchange')
+    message_attachment_ids = fields.One2many('ir.attachment', 'res_id', string="Archivos Adjuntos", domain=[('res_model', '=', 'x_recepcion_facturas')])
 
     @api.model
     def _procesar_adjuntos(self, record):
@@ -22,7 +23,20 @@ class RecepcionFacturas(models.Model):
                         if file_name.endswith('.xml'):
                             with z.open(file_name) as xml_file:
                                 xml_content = xml_file.read()
+                                self._guardar_xml_como_adjunto(record, file_name, xml_content)
                                 self._crear_factura_desde_xml(xml_content)
+
+    def _guardar_xml_como_adjunto(self, record, file_name, xml_content):
+        """Guardar el XML como archivo adjunto."""
+        attachment_vals = {
+            'name': file_name,  # Nombre del archivo adjunto
+            'type': 'binary',   # Tipo de archivo adjunto
+            'datas': base64.b64encode(xml_content),  # Codificar el contenido XML en base64
+            'mimetype': 'application/xml',  # Tipo MIME
+            'res_model': 'x_recepcion_facturas',  # Relacionar el adjunto con el modelo actual
+            'res_id': record.id,  # Relacionar el adjunto con el registro específico
+        }
+        self.env['ir.attachment'].create(attachment_vals)
 
     def _crear_factura_desde_xml(self, xml_content):
         tree = ET.fromstring(xml_content)
