@@ -49,9 +49,26 @@ class RecepFact(models.Model):
             root = ET.fromstring(xml_content)
             namespaces = {node[0]: node[1] for _, node in ET.iterparse(io.BytesIO(xml_content), events=['start-ns'])}
 
+            # Depuración: Registrar namespaces y contenido inicial
+            _logger = self.env['ir.logging']
+            _logger.create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Namespaces detectados: {namespaces}",
+            })
+
             # Extraer datos del proveedor
             supplier_name = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name', namespaces=namespaces)
             supplier_vat = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID', namespaces=namespaces)
+
+            # Depuración: Registrar valores extraídos
+            _logger.create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Proveedor detectado: {supplier_name}, NIT: {supplier_vat}",
+            })
 
             if not supplier_name or not supplier_vat:
                 raise UserError('El archivo XML no contiene datos válidos del proveedor.')
@@ -67,6 +84,14 @@ class RecepFact(models.Model):
             # Extraer totales y líneas de factura
             total_amount = root.findtext('.//cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces=namespaces)
             currency = root.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
+
+            # Depuración: Registrar totales
+            _logger.create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Total detectado: {total_amount}, Moneda: {currency}",
+            })
 
             if not total_amount or not currency:
                 raise UserError('El archivo XML no contiene datos válidos del total.')
