@@ -142,6 +142,15 @@ class RecepFact(models.Model):
                 if not total_amount or not currency:
                     raise UserError('El archivo XML no contiene datos válidos del total.')
             else:
+                self.env['ir.logging'].create({
+                    'name': 'XML Processing',
+                    'type': 'server',
+                    'level': 'info',
+                    'message': 'Nodo de totales no encontrado.',
+                    'path': 'recpfact._process_xml',
+                    'func': '_process_xml',
+                    'line': '57',
+                })
                 raise UserError('El nodo de totales no se encontró en el XML.')
 
             invoice_lines = []
