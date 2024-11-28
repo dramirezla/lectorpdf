@@ -7,19 +7,19 @@ import re
 from PyPDF2 import PdfReader
 
 class RecepFact(models.Model):
-    _name = 'recpfact'
+    _name = 'recpfact_xml'
     _description = 'Recep Fact'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
-    recpfact_pdf = fields.Binary(string="Archivo PDF", attachment=True)
-    recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
+    recpfact_xml_pdf = fields.Binary(string="Archivo PDF", attachment=True)
+    recpfact_xml_pdf_name = fields.Char(string="Nombre del Archivo PDF")
 
     def check_attachments(self):
         # Buscar adjuntos relacionados con este registro
         attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', 'recpfact'),
+            ('res_model', '=', 'recpfact_xml'),
             ('res_id', '=', self.id)
         ])
         
@@ -36,8 +36,8 @@ class RecepFact(models.Model):
                         if file_name.endswith('.pdf'):
                             # Leer y asignar el archivo PDF al campo
                             pdf_content = zf.read(file_name)
-                            self.recpfact_pdf = base64.b64encode(pdf_content)
-                            self.recpfact_pdf_name = file_name
+                            self.recpfact_xml_pdf = base64.b64encode(pdf_content)
+                            self.recpfact_xml_pdf_name = file_name
                             
                             # Procesar el archivo PDF
                             self._process_pdf(pdf_content)
