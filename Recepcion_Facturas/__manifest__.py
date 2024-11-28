@@ -4,7 +4,7 @@
     'author': 'www.fabricadeinnovacion.com',
     'category': 'Accounting',
     'summary': 'Procesar archivos adjuntos y crear facturas de compra.',
-    'depends': ['base', 'mail', 'account'],
+    'depends': ['base', 'mail', 'account',x_recepcion_facturas],
     'license': 'LGPL-3',
     'data': [
     ],
