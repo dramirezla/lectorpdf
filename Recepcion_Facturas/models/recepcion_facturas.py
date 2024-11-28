@@ -8,12 +8,6 @@ class XRecepcionFacturas(models.Model):
     name = fields.Char(string='Factura')
     x_studio_validar = fields.Boolean(string="Validar", track_visibility='onchange')
 
-    def write(self, values):
-        """ Sobrescribir el método write para verificar los adjuntos cuando el campo 'x_studio_validar' cambie """
-        res = super(XRecepcionFacturas, self).write(values)
-        if 'x_studio_validar' in values and values['x_studio_validar']:
-            self._check_attachments()
-        return res
 
     def _check_attachments(self):
         """ Verifica si hay archivos adjuntos en los mensajes internos del registro """
