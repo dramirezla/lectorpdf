@@ -57,6 +57,7 @@ class RecepFact(models.Model):
                 'message': f"Namespaces detectados: {namespaces}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
+                'line': '28',
             })
 
             # Extraer datos del proveedor
@@ -71,6 +72,7 @@ class RecepFact(models.Model):
                 'message': f"Proveedor detectado: {supplier_name}, NIT: {supplier_vat}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
+                'line': '35',
             })
 
             if not supplier_name or not supplier_vat:
@@ -96,6 +98,7 @@ class RecepFact(models.Model):
                 'message': f"Total detectado: {total_amount}, Moneda: {currency}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
+                'line': '51',
             })
 
             if not total_amount or not currency:
