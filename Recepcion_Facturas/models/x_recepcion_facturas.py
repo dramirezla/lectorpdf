@@ -2,7 +2,7 @@ from odoo import models, fields, api
 from odoo.exceptions import UserError
 
 class RecepcionFacturas(models.TransientModel):
-    _name = 'Recepcion_Facturas'
+    _name = 'recepcion.facturas'
     _description = 'Recepción de Facturas'
     name = fields.Char(string='Nombre de la Factura')
 class XRecepcionFacturas(models.Model):
