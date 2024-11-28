@@ -7,7 +7,7 @@ class factPopup(models.Model):
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
         attachments = self.env['mail.attachment'].search([
-            ('res_model', '=', 'x_recepcion_facturas'),
+            ('res_model', '=', 'recpfact'),
             ('res_id', '=', self.id)
         ])
         if not attachments:
