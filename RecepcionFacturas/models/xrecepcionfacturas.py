@@ -102,4 +102,3 @@ class RecepFact(models.Model):
             raise UserError('El archivo XML no tiene un formato válido.')
         except Exception as e:
             raise UserError(f'Ocurrió un error al procesar el archivo XML: {e}')
-
