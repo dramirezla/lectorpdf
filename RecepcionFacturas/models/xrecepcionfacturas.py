@@ -13,7 +13,7 @@ class RecepFact(models.Model):
 
     name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
-    recpfact_pdf = fields.Binary(string="Archivo PDF", attachment=True)
+    recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
 
     def check_attachments(self):
