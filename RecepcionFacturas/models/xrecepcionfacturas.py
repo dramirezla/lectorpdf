@@ -50,12 +50,12 @@ class RecepFact(models.Model):
             namespaces = {node[0]: node[1] for _, node in ET.iterparse(io.BytesIO(xml_content), events=['start-ns'])}
 
             # Depuración: Registrar namespaces y contenido inicial
-            _logger = self.env['ir.logging']
-            _logger.create({
+            self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
                 'level': 'info',
                 'message': f"Namespaces detectados: {namespaces}",
+                'path': 'recpfact._process_xml',
             })
 
             # Extraer datos del proveedor
@@ -63,11 +63,12 @@ class RecepFact(models.Model):
             supplier_vat = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID', namespaces=namespaces)
 
             # Depuración: Registrar valores extraídos
-            _logger.create({
+            self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
                 'level': 'info',
                 'message': f"Proveedor detectado: {supplier_name}, NIT: {supplier_vat}",
+                'path': 'recpfact._process_xml',
             })
 
             if not supplier_name or not supplier_vat:
@@ -86,11 +87,12 @@ class RecepFact(models.Model):
             currency = root.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
 
             # Depuración: Registrar totales
-            _logger.create({
+            self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
                 'level': 'info',
                 'message': f"Total detectado: {total_amount}, Moneda: {currency}",
+                'path': 'recpfact._process_xml',
             })
 
             if not total_amount or not currency:
