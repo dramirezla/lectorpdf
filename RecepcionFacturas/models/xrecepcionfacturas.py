@@ -60,59 +60,18 @@ class RecepFact(models.Model):
                 'line': '28',
             })
 
-            # Depuración: Registrar el contenido del nodo del proveedor
-            supplier_node = root.find('.//cac:SenderParty', namespaces=namespaces)
-            if supplier_node is not None:
-                self.env['ir.logging'].create({
-                    'name': 'XML Processing',
-                    'type': 'server',
-                    'level': 'info',
-                    'message': f"Nodo del proveedor: {ET.tostring(supplier_node, encoding='unicode')}",
-                    'path': 'recpfact._process_xml',
-                    'func': '_process_xml',
-                    'line': '32',
-                })
-            else:
-                self.env['ir.logging'].create({
-                    'name': 'XML Processing',
-                    'type': 'server',
-                    'level': 'info',
-                    'message': "Nodo del proveedor no encontrado.",
-                    'path': 'recpfact._process_xml',
-                    'func': '_process_xml',
-                    'line': '34',
-                })
+            # Depuración: Verificar el contenido de la raíz
+            self.env['ir.logging'].create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Contenido de la raíz del XML: {ET.tostring(root, encoding='unicode')}",
+                'path': 'recpfact._process_xml',
+                'func': '_process_xml',
+                'line': '32',
+            })
 
-            # Extraer datos del proveedor
-            if supplier_node is not None:
-                supplier_name = supplier_node.findtext('.//cbc:RegistrationName', namespaces=namespaces)
-                supplier_vat = supplier_node.findtext('.//cbc:CompanyID', namespaces=namespaces)
-
-                # Depuración: Registrar valores extraídos
-                self.env['ir.logging'].create({
-                    'name': 'XML Processing',
-                    'type': 'server',
-                    'level': 'info',
-                    'message': f"Proveedor detectado: {supplier_name}, NIT: {supplier_vat}",
-                    'path': 'recpfact._process_xml',
-                    'func': '_process_xml',
-                    'line': '38',
-                })
-
-                if not supplier_name or not supplier_vat:
-                    raise UserError('El archivo XML no contiene datos válidos del proveedor.')
-
-                # Buscar o crear el proveedor
-                supplier = self.env['res.partner'].search([('vat', '=', supplier_vat)], limit=1)
-                if not supplier:
-                    supplier = self.env['res.partner'].create({
-                        'name': supplier_name,
-                        'vat': supplier_vat
-                    })
-            else:
-                raise UserError('El nodo del proveedor no se encontró en el XML.')
-
-            # Extraer totales y líneas de factura
+            # Depuración: Verificar el nodo de totales
             total_node = root.find('.//cac:LegalMonetaryTotal', namespaces=namespaces)
             if total_node is not None:
                 self.env['ir.logging'].create({
@@ -124,35 +83,36 @@ class RecepFact(models.Model):
                     'func': '_process_xml',
                     'line': '51',
                 })
-
-                total_amount = total_node.findtext('.//cbc:PayableAmount', namespaces=namespaces)
-                currency = total_node.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
-
-                # Depuración: Registrar totales
-                self.env['ir.logging'].create({
-                    'name': 'XML Processing',
-                    'type': 'server',
-                    'level': 'info',
-                    'message': f"Total detectado: {total_amount}, Moneda: {currency}",
-                    'path': 'recpfact._process_xml',
-                    'func': '_process_xml',
-                    'line': '55',
-                })
-
-                if not total_amount or not currency:
-                    raise UserError('El archivo XML no contiene datos válidos del total.')
             else:
                 self.env['ir.logging'].create({
                     'name': 'XML Processing',
                     'type': 'server',
                     'level': 'info',
-                    'message': 'Nodo de totales no encontrado.',
+                    'message': 'Nodo de totales no encontrado en el XML.',
                     'path': 'recpfact._process_xml',
                     'func': '_process_xml',
-                    'line': '57',
+                    'line': '53',
                 })
                 raise UserError('El nodo de totales no se encontró en el XML.')
 
+            total_amount = total_node.findtext('.//cbc:PayableAmount', namespaces=namespaces)
+            currency = total_node.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
+
+            # Depuración: Registrar totales
+            self.env['ir.logging'].create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Total detectado: {total_amount}, Moneda: {currency}",
+                'path': 'recpfact._process_xml',
+                'func': '_process_xml',
+                'line': '57',
+            })
+
+            if not total_amount or not currency:
+                raise UserError('El archivo XML no contiene datos válidos del total.')
+
+            # Restante procesamiento de la factura...
             invoice_lines = []
             for line in root.findall('.//cac:InvoiceLine', namespaces=namespaces):
                 description = line.findtext('.//cac:Item/cbc:Description', namespaces=namespaces)
