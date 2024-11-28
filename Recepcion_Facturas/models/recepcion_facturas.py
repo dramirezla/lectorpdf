@@ -10,13 +10,9 @@ class XRecepcionFacturas(models.Model):
 
     def write(self, values):
         """ Sobrescribir el método write para verificar los adjuntos cuando el campo 'x_studio_validar' cambie """
-        # Llamar a la implementación original de write para asegurarse de que los valores se registren correctamente
         res = super(XRecepcionFacturas, self).write(values)
-
-        # Verifica si el campo 'x_studio_validar' ha cambiado
         if 'x_studio_validar' in values and values['x_studio_validar']:
             self._check_attachments()
-
         return res
 
     def _check_attachments(self):
@@ -29,10 +25,13 @@ class XRecepcionFacturas(models.Model):
         if not attachments:
             raise UserError('No se encontraron adjuntos en los mensajes internos.')
 
-        # Si quieres hacer algo más con los archivos adjuntos, puedes agregarlos aquí
         for attachment in attachments:
             if attachment.mimetype == 'application/zip':
                 self._process_zip_attachment(attachment)
+
+    def check_attachments(self):
+        """ Método público que llama al método privado _check_attachments """
+        self._check_attachments()
 
     def _process_zip_attachment(self, attachment):
         """ Procesar archivo zip adjunto """
