@@ -68,6 +68,11 @@ class RecepFact(models.Model):
             if not total_amount or not currency:
                 raise UserError('El archivo XML no contiene datos válidos del total.')
 
+            # Validar si la moneda existe en Odoo
+            currency_id = self.env['res.currency'].search([('name', '=', currency)], limit=1)
+            if not currency_id:
+                raise UserError(f'La moneda "{currency}" no está configurada en el sistema.')
+
             # Procesar líneas de factura
             invoice_lines = []
             for line in root.findall('.//cac:InvoiceLine', namespaces=namespaces):
@@ -76,11 +81,14 @@ class RecepFact(models.Model):
                 price = line.findtext('.//cac:Price/cbc:PriceAmount', namespaces=namespaces)
 
                 if description and quantity and price:
-                    invoice_lines.append((0, 0, {
-                        'name': description,
-                        'quantity': float(quantity),
-                        'price_unit': float(price),
-                    }))
+                    try:
+                        invoice_lines.append((0, 0, {
+                            'name': description,
+                            'quantity': float(quantity),
+                            'price_unit': float(price),
+                        }))
+                    except ValueError:
+                        raise UserError(f'Error al procesar una línea de factura: {description}')
 
             if not invoice_lines:
                 raise UserError('El archivo XML no contiene líneas de factura válidas.')
@@ -95,12 +103,24 @@ class RecepFact(models.Model):
                 'move_type': 'in_invoice',
                 'partner_id': supplier.id,
                 'invoice_date': fields.Date.today(),
-                'currency_id': self.env['res.currency'].search([('name', '=', currency)], limit=1).id,
+                'currency_id': currency_id.id,
                 'invoice_line_ids': invoice_lines,
                 'amount_total': float(total_amount),
             })
 
         except ET.ParseError:
             raise UserError('El archivo XML no tiene un formato válido.')
+        except UserError as ue:
+            raise ue  # Relevantar errores conocidos para mensajes claros
         except Exception as e:
-            raise UserError(f'Ocurrió un error al procesar el archivo XML: {e}')
+            # Registrar errores no manejados
+            self.env['ir.logging'].create({
+                'name': 'XML Processing Error',
+                'type': 'server',
+                'level': 'error',
+                'message': f"Error desconocido: {e}",
+                'path': 'recpfact._process_xml',
+                'func': '_process_xml',
+                'line': '150',
+            })
+            raise UserError(f'Ocurrió un error inesperado al procesar el archivo XML: {e}')
