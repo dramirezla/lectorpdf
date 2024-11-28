@@ -42,14 +42,48 @@ class RecepFact(models.Model):
                             self._process_xml(xml_content)
                             return
                 raise UserError('El archivo ZIP no contiene ningún archivo XML.')
+    def check_attachments(self):
+        # Buscar adjuntos relacionados con este registro
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', 'recpfact'),
+            ('res_id', '=', self.id)
+        ])
+        
+        if not attachments:
+            raise UserError('No se encontraron adjuntos en los mensajes internos.')
+
+        # Procesar los adjuntos
+        for attachment in attachments:
+            if attachment.mimetype == 'application/zip':
+                # Descomprimir el archivo ZIP
+                zip_data = base64.b64decode(attachment.datas)
+                with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zf:
+                    for file_name in zf.namelist():
+                        if file_name.endswith('.xml'):
+                            # Leer y asignar el archivo XML al campo
+                            xml_content = zf.read(file_name)
+                            self.recpfact_xml = base64.b64encode(xml_content)
+                            self.recpfact_xml_name = file_name
+                            
+                            # Procesar el archivo XML
+                            self._process_xml(xml_content)
+                            return
+                raise UserError('El archivo ZIP no contiene ningún archivo XML.')
 
     def _process_xml(self, xml_content):
         try:
             # Parsear el contenido del XML
             root = ET.fromstring(xml_content)
-            namespaces = {node[0]: node[1] for _, node in ET.iterparse(io.BytesIO(xml_content), events=['start-ns'])}
 
-            # Depuración: Registrar namespaces y contenido inicial
+            # Detectar namespaces
+            namespaces = {node[0]: node[1] for _, node in ET.iterparse(io.BytesIO(xml_content), events=['start-ns'])}
+            if not namespaces:
+                namespaces = {
+                    'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+                    'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+                }
+
+            # Depuración: Registrar namespaces detectados
             self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
@@ -57,49 +91,51 @@ class RecepFact(models.Model):
                 'message': f"Namespaces detectados: {namespaces}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
-                'line': '28',
+                'line': '100',
             })
 
-            # Depuración: Verificar el contenido de la raíz
+            # Depuración: Verificar nodos de nivel superior
             root_content = [child.tag for child in root.iter()]
             self.env['ir.logging'].create({
-                'name': 'XML Processing',
+                'name': 'XML Structure',
                 'type': 'server',
                 'level': 'info',
-                'message': f"Contenido de los nodos de nivel superior: {root_content}",
+                'message': f"Nodos de nivel superior: {root_content}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
-                'line': '32',
+                'line': '110',
             })
 
-            # Depuración: Verificar el nodo de totales
+            # Intentar encontrar el nodo cac:LegalMonetaryTotal
             total_node = root.find('.//cac:LegalMonetaryTotal', namespaces=namespaces)
-            if total_node is not None:
+            if not total_node:
+                # Intentar encontrar el nodo sin namespaces
+                for node in root.iter():
+                    if 'LegalMonetaryTotal' in node.tag:
+                        total_node = node
+                        break
+
+            if total_node is None:
+                # Depuración: Mostrar contenido del XML si no se encuentra el nodo
                 self.env['ir.logging'].create({
-                    'name': 'XML Processing',
+                    'name': 'XML Debug',
                     'type': 'server',
                     'level': 'info',
-                    'message': f"Nodo de totales encontrado: {ET.tostring(total_node, encoding='unicode')}",
+                    'message': f"Contenido del XML: {ET.tostring(root, encoding='unicode')}",
                     'path': 'recpfact._process_xml',
                     'func': '_process_xml',
-                    'line': '51',
-                })
-            else:
-                self.env['ir.logging'].create({
-                    'name': 'XML Processing',
-                    'type': 'server',
-                    'level': 'info',
-                    'message': 'Nodo de totales no encontrado en el XML.',
-                    'path': 'recpfact._process_xml',
-                    'func': '_process_xml',
-                    'line': '53',
+                    'line': '120',
                 })
                 raise UserError('El nodo de totales no se encontró en el XML.')
 
+            # Extraer datos del nodo cac:LegalMonetaryTotal
             total_amount = total_node.findtext('.//cbc:PayableAmount', namespaces=namespaces)
             currency = total_node.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
 
-            # Depuración: Registrar totales
+            if not total_amount or not currency:
+                raise UserError('El archivo XML no contiene datos válidos del total.')
+
+            # Depuración: Registrar los totales detectados
             self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
@@ -107,13 +143,10 @@ class RecepFact(models.Model):
                 'message': f"Total detectado: {total_amount}, Moneda: {currency}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
-                'line': '57',
+                'line': '140',
             })
 
-            if not total_amount or not currency:
-                raise UserError('El archivo XML no contiene datos válidos del total.')
-
-            # Restante procesamiento de la factura...
+            # Procesar líneas de factura
             invoice_lines = []
             for line in root.findall('.//cac:InvoiceLine', namespaces=namespaces):
                 description = line.findtext('.//cac:Item/cbc:Description', namespaces=namespaces)
@@ -133,7 +166,7 @@ class RecepFact(models.Model):
             # Crear la factura de compra
             self.env['account.move'].create({
                 'move_type': 'in_invoice',
-                'partner_id': supplier.id,
+                'partner_id': self.env['res.partner'].search([], limit=1).id,  # Ajusta esto según tus necesidades
                 'invoice_date': fields.Date.today(),
                 'currency_id': self.env['res.currency'].search([('name', '=', currency)], limit=1).id,
                 'invoice_line_ids': invoice_lines,
