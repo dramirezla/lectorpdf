@@ -61,11 +61,12 @@ class RecepFact(models.Model):
             })
 
             # Depuración: Verificar el contenido de la raíz
+            root_content = [child.tag for child in root.iter()]
             self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
                 'level': 'info',
-                'message': f"Contenido de la raíz del XML: {ET.tostring(root, encoding='unicode')}",
+                'message': f"Contenido de los nodos de nivel superior: {root_content}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
                 'line': '32',
@@ -78,7 +79,7 @@ class RecepFact(models.Model):
                     'name': 'XML Processing',
                     'type': 'server',
                     'level': 'info',
-                    'message': f"Nodo de totales: {ET.tostring(total_node, encoding='unicode')}",
+                    'message': f"Nodo de totales encontrado: {ET.tostring(total_node, encoding='unicode')}",
                     'path': 'recpfact._process_xml',
                     'func': '_process_xml',
                     'line': '51',
