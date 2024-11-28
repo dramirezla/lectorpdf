@@ -61,7 +61,7 @@ class RecepFact(models.Model):
             })
 
             # Depuración: Registrar el contenido del nodo del proveedor
-            supplier_node = root.find('.//cac:AccountingSupplierParty', namespaces=namespaces)
+            supplier_node = root.find('.//cac:SenderParty', namespaces=namespaces)
             self.env['ir.logging'].create({
                 'name': 'XML Processing',
                 'type': 'server',
@@ -73,8 +73,8 @@ class RecepFact(models.Model):
             })
 
             # Extraer datos del proveedor
-            supplier_name = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name', namespaces=namespaces)
-            supplier_vat = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID', namespaces=namespaces)
+            supplier_name = supplier_node.findtext('.//cbc:RegistrationName', namespaces=namespaces)
+            supplier_vat = supplier_node.findtext('.//cbc:CompanyID', namespaces=namespaces)
 
             # Depuración: Registrar valores extraídos
             self.env['ir.logging'].create({
