@@ -1,11 +1,15 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
-class XRecepcionFacturas(models.Model):
-    _name = 'x_recepcion_facturas'
+class RecepcionFacturas(models.TransientModel):
+    _name = 'recepcion.facturas'
     _description = 'Recepción de Facturas'
-
     name = fields.Char(string='Nombre de la Factura')
+class XRecepcionFacturas(models.Model):
+    _inherit = 'x_recepcion_facturas'
+    
+
+    
 
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
