@@ -9,7 +9,7 @@ class factPopup(models.Model):
     description = fields.Text(string="Descripción")
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
-        attachments = self.env['mail.attachment'].search([
+        attachments = self.env['ir.attachment'].search([
             ('res_model', '=', 'recpfact'),
             ('res_id', '=', self.id)
         ])
