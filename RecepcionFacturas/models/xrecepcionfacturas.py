@@ -1,8 +1,12 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
+class factPopup(models.TransientModel):
+    _name = 'recpfact'
+    _description = 'Recep Fact'
+
 class XRecepcionFacturas(models.Model):
-    _inherit = 'manual.x_recepcion_facturas'
+    _inherit = 'x_recepcion_facturas'
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
         attachments = self.env['mail.attachment'].search([
