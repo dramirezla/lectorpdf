@@ -47,14 +47,11 @@ class RecepFact(models.Model):
         try:
             # Parsear el contenido del XML
             root = ET.fromstring(xml_content)
-            ns = {
-                'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-                'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2'
-            }
+            namespaces = {node[0]: node[1] for _, node in ET.iterparse(io.BytesIO(xml_content), events=['start-ns'])}
 
             # Extraer datos del proveedor
-            supplier_name = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name', namespaces=ns)
-            supplier_vat = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID', namespaces=ns)
+            supplier_name = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyName/cbc:Name', namespaces=namespaces)
+            supplier_vat = root.findtext('.//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID', namespaces=namespaces)
 
             if not supplier_name or not supplier_vat:
                 raise UserError('El archivo XML no contiene datos válidos del proveedor.')
@@ -68,17 +65,17 @@ class RecepFact(models.Model):
                 })
 
             # Extraer totales y líneas de factura
-            total_amount = root.findtext('.//cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces=ns)
-            currency = root.findtext('.//cac:LegalMonetaryTotal/cbc:PayableAmount[@currencyID]', namespaces=ns)
+            total_amount = root.findtext('.//cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces=namespaces)
+            currency = root.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
 
             if not total_amount or not currency:
                 raise UserError('El archivo XML no contiene datos válidos del total.')
 
             invoice_lines = []
-            for line in root.findall('.//cac:InvoiceLine', namespaces=ns):
-                description = line.findtext('.//cac:Item/cbc:Description', namespaces=ns)
-                quantity = line.findtext('.//cbc:InvoicedQuantity', namespaces=ns)
-                price = line.findtext('.//cac:Price/cbc:PriceAmount', namespaces=ns)
+            for line in root.findall('.//cac:InvoiceLine', namespaces=namespaces):
+                description = line.findtext('.//cac:Item/cbc:Description', namespaces=namespaces)
+                quantity = line.findtext('.//cbc:InvoicedQuantity', namespaces=namespaces)
+                price = line.findtext('.//cac:Price/cbc:PriceAmount', namespaces=namespaces)
 
                 if description and quantity and price:
                     invoice_lines.append((0, 0, {
@@ -96,7 +93,8 @@ class RecepFact(models.Model):
                 'partner_id': supplier.id,
                 'invoice_date': fields.Date.today(),
                 'currency_id': self.env['res.currency'].search([('name', '=', currency)], limit=1).id,
-                'invoice_line_ids': invoice_lines
+                'invoice_line_ids': invoice_lines,
+                'amount_total': float(total_amount)
             })
         except ET.ParseError:
             raise UserError('El archivo XML no tiene un formato válido.')
