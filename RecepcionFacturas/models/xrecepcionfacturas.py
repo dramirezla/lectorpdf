@@ -99,8 +99,19 @@ class RecepFact(models.Model):
                 })
 
             # Extraer totales y líneas de factura
-            total_amount = root.findtext('.//cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces=namespaces)
-            currency = root.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
+            total_node = root.find('.//cac:LegalMonetaryTotal', namespaces=namespaces)
+            self.env['ir.logging'].create({
+                'name': 'XML Processing',
+                'type': 'server',
+                'level': 'info',
+                'message': f"Nodo de totales: {ET.tostring(total_node, encoding='unicode') if total_node else 'No encontrado'}",
+                'path': 'recpfact._process_xml',
+                'func': '_process_xml',
+                'line': '51',
+            })
+
+            total_amount = total_node.findtext('.//cbc:PayableAmount', namespaces=namespaces)
+            currency = total_node.findtext('.//cbc:DocumentCurrencyCode', namespaces=namespaces)
 
             # Depuración: Registrar totales
             self.env['ir.logging'].create({
@@ -110,7 +121,7 @@ class RecepFact(models.Model):
                 'message': f"Total detectado: {total_amount}, Moneda: {currency}",
                 'path': 'recpfact._process_xml',
                 'func': '_process_xml',
-                'line': '51',
+                'line': '55',
             })
 
             if not total_amount or not currency:
