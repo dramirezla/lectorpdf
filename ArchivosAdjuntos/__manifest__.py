@@ -7,9 +7,7 @@
     "website": "https://yourwebsite.com",
     "license": "LGPL-3",
     "depends": ["base", "mail"],
-    "data": [
-        "views/list_view.xml"
-    ],
+    "data": [],
     "installable": True,
     "application": False
 }
