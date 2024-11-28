@@ -1,1 +1,1 @@
-from . import Recepcion_Facturas
+from . import xrecepcionfacturas
