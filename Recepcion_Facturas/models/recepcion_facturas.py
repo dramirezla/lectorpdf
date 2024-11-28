@@ -2,7 +2,7 @@ from odoo import models, fields, api
 from odoo.exceptions import UserError
 
 class XRecepcionFacturas(models.Model):
-    _name = 'x.recepcion.facturas'
+    _name = 'x_recepcion_facturas'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string='Factura')
