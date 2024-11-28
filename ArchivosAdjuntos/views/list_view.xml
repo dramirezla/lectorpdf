@@ -3,7 +3,7 @@
     <record id="view_list_with_button" model="ir.ui.view">
         <field name="name">x_recepcion_facturas.list.view</field>
         <field name="model">x_recepcion_facturas</field>
-        <field name="inherit_id" ref="module_name.view_list_inherit"/>
+        <field name="inherit_id" ref="x_recepcion_facturas.view_list_inherit"/>
         <field name="arch" type="xml">
             <header>
                 <button name="action_load_attachments" type="object" string="Load Attachments" class="btn-primary"/>
