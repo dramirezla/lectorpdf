@@ -7,6 +7,7 @@ class factPopup(models.TransientModel):
 
 class XRecepcionFacturas(models.Model):
     _inherit = 'x_recepcion_facturas'
+    @api.model
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
         attachments = self.env['mail.attachment'].search([
