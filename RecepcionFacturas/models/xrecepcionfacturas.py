@@ -7,6 +7,7 @@ class factPopup(models.TransientModel):
 
 class XRecepcionFacturas(models.Model):
     _inherit = 'x_recepcion_facturas'
+    new_field = fields.Char(string="Nuevo Campo")
     @api.model
     def check_attachments(self):
         # Este método debería contener la lógica de comprobación de adjuntos
