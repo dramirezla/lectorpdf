@@ -9,7 +9,7 @@ class XRecepcionFacturas(models.Model):
     x_studio_validar = fields.Boolean(string="Validar", track_visibility='onchange')
 
 
-    def _check_attachments(self):
+    def check_attachments(self):
         """ Verifica si hay archivos adjuntos en los mensajes internos del registro """
         attachments = self.env['mail.attachment'].search([
             ('res_model', '=', 'x_recepcion_facturas'),
@@ -22,10 +22,6 @@ class XRecepcionFacturas(models.Model):
         for attachment in attachments:
             if attachment.mimetype == 'application/zip':
                 self._process_zip_attachment(attachment)
-
-    def check_attachments(self):
-        """ Método público que llama al método privado _check_attachments """
-        self._check_attachments()
 
     def _process_zip_attachment(self, attachment):
         """ Procesar archivo zip adjunto """
