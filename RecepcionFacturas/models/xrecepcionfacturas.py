@@ -1,4 +1,49 @@
-    def _process_xml(self, xml_content):
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+import base64
+import zipfile
+import io
+import xml.etree.ElementTree as ET
+
+class RecepFact(models.Model):
+    _name = 'recpfact'
+    _description = 'Recep Fact'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+
+    name = fields.Char(string="Nombre")
+    description = fields.Text(string="Descripción")
+    recpfact_xml = fields.Binary(string="Archivo XML", attachment=True)
+    recpfact_xml_name = fields.Char(string="Nombre del Archivo XML")
+
+    def check_attachments(self):
+        # Buscar adjuntos relacionados con este registro
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', 'recpfact'),
+            ('res_id', '=', self.id)
+        ])
+        
+        if not attachments:
+            raise UserError('No se encontraron adjuntos en los mensajes internos.')
+
+        # Procesar los adjuntos
+        for attachment in attachments:
+            if attachment.mimetype == 'application/zip':
+                # Descomprimir el archivo ZIP
+                zip_data = base64.b64decode(attachment.datas)
+                with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zf:
+                    for file_name in zf.namelist():
+                        if file_name.endswith('.xml'):
+                            # Leer y asignar el archivo XML al campo
+                            xml_content = zf.read(file_name)
+                            self.recpfact_xml = base64.b64encode(xml_content)
+                            self.recpfact_xml_name = file_name
+                            
+                            # Procesar el archivo XML
+                            self._process_xml(xml_content)
+                            return
+                raise UserError('El archivo ZIP no contiene ningún archivo XML.')
+
+        def _process_xml(self, xml_content):
         try:
             # Parsear el contenido del XML
             root = ET.fromstring(xml_content)
