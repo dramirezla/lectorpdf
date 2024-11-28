@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
-class factPopup(models.TransientModel):
+class factPopup(models.Model):
     _name = 'recpfact'
     _description = 'Recep Fact'
 
