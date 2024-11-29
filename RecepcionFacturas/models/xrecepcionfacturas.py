@@ -49,14 +49,15 @@ class RecepFact(models.Model):
                 raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
 
     #def _process_pdf(self, pdf_content):
+    
     def extract_text_from_pdf(self, pdf_binary):
-        """Extrae texto de un archivo PDF."""
-        pdf_text = ""
-        pdf_document = fitz.open(stream=pdf_binary, filetype="pdf")
-        for page in pdf_document:
-            pdf_text += page.get_text()
-        pdf_document.close()
-        return pdf_text
+    """Extrae texto de un archivo PDF."""
+    pdf_text = ""
+    pdf_document = fitz.open(stream=pdf_binary, filetype="pdf")
+    for page in pdf_document:
+        pdf_text += page.get_text()
+    pdf_document.close()
+    return pdf_text
 
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
@@ -87,27 +88,34 @@ class RecepFact(models.Model):
         end_index = text.find(end_key, start_index)
         return text[start_index:end_index].strip()
 
-    def _process_pdf(self, pdf_content):
-        """Crea una factura de proveedor en Odoo basada en el PDF."""
-        for record in self:
-            pdf_binary = record.pdf_file.decode('base64')
-            pdf_text = self.extract_text_from_pdf(pdf_binary)
-            invoice_data = self.parse_invoice_data(pdf_text)
+    def _process_pdf(self):
+    """Procesa el archivo PDF y crea una factura de proveedor."""
+    for record in self:
+        if not record.pdf_file:
+            raise UserError('No hay un archivo PDF cargado para procesar.')
 
-            # Crear factura de proveedor en Odoo
-            self.env['account.move'].create({
-                'move_type': 'in_invoice',
-                'partner_id': self.find_or_create_partner(invoice_data['supplier_name'], invoice_data['supplier_nit']).id,
-                'invoice_date': invoice_data['invoice_date'],
-                'invoice_date_due': invoice_data['due_date'],
-                'amount_total': invoice_data['amount_total'],
-                'amount_tax': invoice_data['amount_tax'],
-                'invoice_line_ids': [(0, 0, {
-                    'name': 'Cargos Facturados',
-                    'quantity': 1,
-                    'price_unit': invoice_data['amount_total'] - invoice_data['amount_tax'],
-                })]
-            })
+        # Decodificar el archivo PDF desde base64
+        pdf_binary = base64.b64decode(record.pdf_file)
+        pdf_text = self.extract_text_from_pdf(pdf_binary)
+
+        # Parsear los datos de la factura
+        invoice_data = self.parse_invoice_data(pdf_text)
+
+        # Crear factura de proveedor en Odoo
+        self.env['account.move'].create({
+            'move_type': 'in_invoice',
+            'partner_id': self.find_or_create_partner(
+                invoice_data['supplier_name'],
+                invoice_data['supplier_nit']
+            ).id,
+            'invoice_date': invoice_data['invoice_date'],
+            'invoice_date_due': invoice_data['due_date'],
+            'invoice_line_ids': [(0, 0, {
+                'name': 'Cargos Facturados',
+                'quantity': 1,
+                'price_unit': invoice_data['amount_total'] - invoice_data['amount_tax'],
+            })]
+        })
 
     def find_or_create_partner(self, name, vat):
         """Busca o crea un partner basado en el nombre y NIT."""
