@@ -124,7 +124,7 @@ class RecepFact(models.Model):
                 'invoice_line_ids': [(0, 0, {
                     'name': 'Cargos Facturados',
                     'quantity': 1,
-                    'price_unit': invoice_data['amount_total'] - invoice_data['amount_tax'],
+                    'price_unit': invoice_data['amount_total'],
                 })]
             })
     def find_or_create_partner(self, name, vat):
