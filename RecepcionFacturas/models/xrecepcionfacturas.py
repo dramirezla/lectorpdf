@@ -15,7 +15,7 @@ class RecepFact(models.Model):
 
     ##no
     
-    
+    name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
