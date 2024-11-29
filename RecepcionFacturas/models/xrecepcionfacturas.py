@@ -5,7 +5,7 @@ import zipfile
 import io
 import re
 from PyPDF2 import PdfReader
-from PyMuPDF import fitz
+import fitz
 
 class RecepFact(models.Model):
     _name = 'recpfact'
