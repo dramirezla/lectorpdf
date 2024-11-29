@@ -119,8 +119,8 @@ class RecepFact(models.Model):
                     invoice_data['supplier_name'],
                     invoice_data['supplier_nit']
                 ).id,
-                'invoice_date': invoice_data['invoice_date'],
-                'invoice_date_due': invoice_data['due_date'],
+                'invoice_date': fields.Date.today()#invoice_data['invoice_date'],
+                'invoice_date_due': fields.Date.today()#invoice_data['due_date'],
                 'invoice_line_ids': [(0, 0, {
                     'name': 'Cargos Facturados',
                     'quantity': 1,
