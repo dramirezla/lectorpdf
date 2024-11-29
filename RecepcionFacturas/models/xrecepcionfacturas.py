@@ -73,10 +73,20 @@ class RecepFact(models.Model):
         data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
         data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
 
-        # Totales
-        data['amount_total'] = float(self.extract_field(pdf_text, 'Total Neto:', '\n').replace('$', '').replace(',', '').strip())
-        data['amount_tax'] = float(self.extract_field(pdf_text, 'Total impuestos IVA:', '\n').replace('$', '').replace(',', '').strip())
+        
+        try:
+            # Extraer y procesar el campo 'Total Neto'
+            total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
+            if total_text:  # Validar si el texto no está vacío
+                total_cleaned = total_text.replace('$', '').replace(',', '').strip()
+                data['amount_total'] = float(total_cleaned) if total_cleaned else 0.0
+            else:
+                data['amount_total'] = 0.0  # Valor por defecto si no se encuentra
+        except ValueError as e:
+            raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
 
+        
+        
         # Cliente (si aplica en factura de proveedor)
         data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
