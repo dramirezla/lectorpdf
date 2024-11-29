@@ -12,6 +12,9 @@ class RecepFact(models.Model):
     _description = 'Recep Fact'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
+
+    ##no
+    
     name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
