@@ -43,7 +43,7 @@ class RecepFact(models.Model):
                             self.recpfact_pdf_name = file_name
                             
                             # Procesar el archivo PDF
-                            #self._process_pdf(pdf_content)
+                            self._process_pdf(self)
                             #self.create_supplier_invoice()
                             return
                 raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
