@@ -134,6 +134,6 @@ class RecepFact(models.Model):
             partner = self.env['res.partner'].create({
                 'name': name,
                 'vat': vat,
-                'supplier': True,
+                
             })
         return partner   
