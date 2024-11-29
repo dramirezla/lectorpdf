@@ -44,11 +44,11 @@ class RecepFact(models.Model):
                             
                             # Procesar el archivo PDF
                             #self._process_pdf(pdf_content)
-                            self.create_supplier_invoice()
+                            #self.create_supplier_invoice()
                             return
                 raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
 
-    def _process_pdf(self, pdf_content):
+    #def _process_pdf(self, pdf_content):
     def extract_text_from_pdf(self, pdf_binary):
         """Extrae texto de un archivo PDF."""
         pdf_text = ""
@@ -87,7 +87,7 @@ class RecepFact(models.Model):
         end_index = text.find(end_key, start_index)
         return text[start_index:end_index].strip()
 
-    def create_supplier_invoice(self):
+    def _process_pdf(self, pdf_content):
         """Crea una factura de proveedor en Odoo basada en el PDF."""
         for record in self:
             pdf_binary = record.pdf_file.decode('base64')
