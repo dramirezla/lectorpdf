@@ -8,7 +8,7 @@ from PyPDF2 import PdfReader
 import fitz
 
 class RecepFact(models.Model):
-    _name = 'recpfact'
+    _name = 'recpfact2'
     _description = 'Recep Fact'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
