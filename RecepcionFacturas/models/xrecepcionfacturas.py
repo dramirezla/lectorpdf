@@ -14,7 +14,9 @@ class RecepFact(models.Model):
     name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
+    pdf_file = fields.Binary(string='Archivo PDF', required=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
+    
 
     def check_attachments(self):
         # Buscar adjuntos relacionados con este registro
@@ -37,42 +39,83 @@ class RecepFact(models.Model):
                             # Leer y asignar el archivo PDF al campo
                             pdf_content = zf.read(file_name)
                             self.recpfact_xml = base64.b64encode(pdf_content)
+                            self.pdf_file = base64.b64encode(pdf_content)
                             self.recpfact_pdf_name = file_name
                             
                             # Procesar el archivo PDF
-                            self._process_pdf(pdf_content)
+                            #self._process_pdf(pdf_content)
+                            self.create_supplier_invoice()
                             return
                 raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
 
     def _process_pdf(self, pdf_content):
-        try:
-            # Leer el PDF
-            reader = PdfReader(io.BytesIO(pdf_content))
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text()
+    def extract_text_from_pdf(self, pdf_binary):
+        """Extrae texto de un archivo PDF."""
+        pdf_text = ""
+        pdf_document = fitz.open(stream=pdf_binary, filetype="pdf")
+        for page in pdf_document:
+            pdf_text += page.get_text()
+        pdf_document.close()
+        return pdf_text
 
-            if not text:
-                raise UserError('No se pudo extraer texto del archivo PDF.')
+    def parse_invoice_data(self, pdf_text):
+        """Parsea datos relevantes de la factura desde el texto."""
+        data = {}
 
-            # Extraer el NIT y el precio con expresiones regulares
-            nit = re.search(r'(?<=NIT:)\s*(\d+)', text)
-            precio = re.search(r'(?<=Precio:)\s*\$?(\d+,\d+|\d+)', text)
+        # Datos del proveedor
+        data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
+        data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
 
-            if not nit or not precio:
-                raise UserError('No se encontraron los datos requeridos en el PDF.')
+        # Datos de la factura
+        data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
+        data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
+        data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
 
-            # Validar si el precio tiene formato correcto
-            total_amount = precio.group(1).replace(',', '')  # Eliminar comas si hay
-            try:
-                total_amount = float(total_amount)
-            except ValueError:
-                raise UserError('El precio en el PDF no tiene un formato válido.')
+        # Totales
+        data['amount_total'] = float(self.extract_field(pdf_text, 'Total Neto:', '\n').replace('$', '').replace(',', '').strip())
+        data['amount_tax'] = float(self.extract_field(pdf_text, 'Total impuestos IVA:', '\n').replace('$', '').replace(',', '').strip())
 
-            # Guardar los valores extraídos en campos de la factura o hacer lo que necesites
-            self.name = f'Factura {nit.group(1)}'
-            self.description = f'NIT: {nit.group(1)} | Total: {total_amount}'
-            # Si tienes un campo de factura relacionado, lo puedes usar aquí para crear la factura
+        # Cliente (si aplica en factura de proveedor)
+        data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
+        data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
 
-        except Exception as e:
-            raise UserError(f'Ocurrió un error inesperado al procesar el archivo PDF: {e}')
+        return data
+
+    def extract_field(self, text, start_key, end_key, start_offset=0):
+        """Extrae un campo delimitado por claves de inicio y fin."""
+        start_index = text.find(start_key) + len(start_key) + start_offset
+        end_index = text.find(end_key, start_index)
+        return text[start_index:end_index].strip()
+
+    def create_supplier_invoice(self):
+        """Crea una factura de proveedor en Odoo basada en el PDF."""
+        for record in self:
+            pdf_binary = record.pdf_file.decode('base64')
+            pdf_text = self.extract_text_from_pdf(pdf_binary)
+            invoice_data = self.parse_invoice_data(pdf_text)
+
+            # Crear factura de proveedor en Odoo
+            self.env['account.move'].create({
+                'move_type': 'in_invoice',
+                'partner_id': self.find_or_create_partner(invoice_data['supplier_name'], invoice_data['supplier_nit']).id,
+                'invoice_date': invoice_data['invoice_date'],
+                'invoice_date_due': invoice_data['due_date'],
+                'amount_total': invoice_data['amount_total'],
+                'amount_tax': invoice_data['amount_tax'],
+                'invoice_line_ids': [(0, 0, {
+                    'name': 'Cargos Facturados',
+                    'quantity': 1,
+                    'price_unit': invoice_data['amount_total'] - invoice_data['amount_tax'],
+                })]
+            })
+
+    def find_or_create_partner(self, name, vat):
+        """Busca o crea un partner basado en el nombre y NIT."""
+        partner = self.env['res.partner'].search([('name', '=', name), ('vat', '=', vat)], limit=1)
+        if not partner:
+            partner = self.env['res.partner'].create({
+                'name': name,
+                'vat': vat,
+                'supplier': True,
+            })
+        return partner   
