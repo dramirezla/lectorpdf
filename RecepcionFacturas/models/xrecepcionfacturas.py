@@ -6,9 +6,6 @@ import io
 import re
 from PyPDF2 import PdfReader
 import fitz
-import logging
-
-_logger = logging.getLogger(__name__)
 
 
 class RecepFact(models.Model):
