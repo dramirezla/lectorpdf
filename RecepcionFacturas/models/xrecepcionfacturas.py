@@ -25,7 +25,7 @@ class RecepFact(models.Model):
     def check_attachments(self):
         # Buscar adjuntos relacionados con este registro
         attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', 'recpfact'),
+            ('res_model', '=', 'recpfact2'),
             ('res_id', '=', self.id)
         ])
         
