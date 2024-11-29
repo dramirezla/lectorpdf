@@ -66,35 +66,37 @@ class RecepFact(models.Model):
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
-
+    
         # Datos del proveedor
         data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
         data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
-
+    
         # Datos de la factura
         data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
         data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
         data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
-
-        
+    
+        # Extraer y procesar el campo 'Total Neto'
         try:
-            # Extraer y procesar el campo 'Total Neto'
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
             if total_text:  # Validar si el texto no está vacío
-                total_cleaned = total_text.replace('$', '').replace(',', '').strip()
-                data['amount_total'] = float(total_cleaned) if total_cleaned else 0.0
+                # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
+                total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
+                if total_cleaned:
+                    data['amount_total'] = float(total_cleaned)  # Convertir a float
+                else:
+                    data['amount_total'] = 0.0  # Si no se puede limpiar, establecer como 0
             else:
-                data['amount_total'] = 0.0  # Valor por defecto si no se encuentra
+                data['amount_total'] = 0.0  # Valor por defecto si no se encuentra el campo
         except ValueError as e:
             raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
-
-        
-        
+    
         # Cliente (si aplica en factura de proveedor)
         data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
-
+    
         return data
+
 
     def extract_field(self, text, start_key, end_key, start_offset=0):
         """Extrae un campo delimitado por claves de inicio y fin."""
