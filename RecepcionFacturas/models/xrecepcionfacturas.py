@@ -6,6 +6,10 @@ import io
 import re
 from PyPDF2 import PdfReader
 import fitz
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class RecepFact(models.Model):
     _name = 'recpfact2'
@@ -79,9 +83,13 @@ class RecepFact(models.Model):
         # Extraer y procesar el campo 'Total Neto'
         try:
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
+            _logger.debug(f"total_text: {total_text}")  # Imprime el valor de total_text
+    
             if total_text:  # Validar si el texto no está vacío
                 # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
                 total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
+                _logger.debug(f"total_cleaned: {total_cleaned}")  # Imprime el valor de total_cleaned
+    
                 if total_cleaned:
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
@@ -96,6 +104,7 @@ class RecepFact(models.Model):
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
     
         return data
+
 
 
     def extract_field(self, text, start_key, end_key, start_offset=0):
