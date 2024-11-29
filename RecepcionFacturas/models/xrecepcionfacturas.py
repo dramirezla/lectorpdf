@@ -36,7 +36,7 @@ class RecepFact(models.Model):
                         if file_name.endswith('.pdf'):
                             # Leer y asignar el archivo PDF al campo
                             pdf_content = zf.read(file_name)
-                            self.recpfact_pdf = base64.b64encode(pdf_content)
+                            self.recpfact_xml = base64.b64encode(pdf_content)
                             self.recpfact_pdf_name = file_name
                             
                             # Procesar el archivo PDF
