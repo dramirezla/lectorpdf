@@ -85,7 +85,7 @@ class RecepFact(models.Model):
                 # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
                 total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
                 if total_cleaned:
-                    data['amount_total'] = float(total_cleaned)  # Convertir a float
+                    data['amount_total'] = total_cleaned  # Convertir a float
                 else:
                     data['amount_total'] = 505.0  # Si no se puede limpiar, establecer como 0
             else:
