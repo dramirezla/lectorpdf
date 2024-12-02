@@ -1,5 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+from odoo.tools import safe_eval
 import base64
 import zipfile
 import io
@@ -64,6 +65,7 @@ class RecepFact(models.Model):
         pdf_document.close()
         return pdf_text
 
+
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
@@ -80,12 +82,16 @@ class RecepFact(models.Model):
         # Extraer y procesar el campo 'Total Neto'
         try:
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
-            print(f"total_text: {total_text}")  # Usando print() para depuración
-    
+            
+            # Depuración con safe_eval
+            safe_eval(f"print('total_text: {total_text}')")  # Esto imprimirá el valor en consola/log
+            
             if total_text:  # Validar si el texto no está vacío
                 total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
-                print(f"total_cleaned: {total_cleaned}")  # Usando print() para depuración
-    
+                
+                # Otra depuración con safe_eval
+                safe_eval(f"print('total_cleaned: {total_cleaned}')")
+                
                 if total_cleaned:
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
@@ -100,6 +106,7 @@ class RecepFact(models.Model):
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
     
         return data
+
 
 
 
