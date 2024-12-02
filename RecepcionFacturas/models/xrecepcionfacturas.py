@@ -80,14 +80,16 @@ class RecepFact(models.Model):
     
         # Extraer y procesar el campo 'Total Neto'
         try:
-            total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
+            total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
             if total_text:  # Validar si el texto no está vacío
-                # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
-                total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
+                # Capturar la parte hasta el segundo punto decimal
+                total_cleaned = re.search(r'^([\d,.]+?\.\d{2})', total_text)  # Tomar hasta dos decimales
                 if total_cleaned:
-                    data['amount_total'] = total_cleaned  # Convertir a float
+                    total_cleaned = total_cleaned.group(0)  # Extraer el valor del grupo
+                    total_cleaned = total_cleaned.replace(',', '')  # Eliminar las comas
+                    data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
-                    data['amount_total'] = 505.0  # Si no se puede limpiar, establecer como 0
+                    data['amount_total'] = 505.0  # Si no se encuentra un valor válido
             else:
                 data['amount_total'] = 404.0  # Valor por defecto si no se encuentra el campo
         except ValueError as e:
@@ -98,6 +100,7 @@ class RecepFact(models.Model):
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
     
         return data
+
 
     
     def extract_field(self, text, start_key, end_key, start_offset=0):
