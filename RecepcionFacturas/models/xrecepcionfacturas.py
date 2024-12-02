@@ -113,7 +113,7 @@ class RecepFact(models.Model):
         # Esta regex busca el patrón de cada fila en la tabla
         product_pattern = re.compile(r'(\d+)\s+([^\d]+)\s+([A-Za-z]+)\s+(\d+)\s+\$([\d,\.]+)\s+\$([\d,\.]+)\s+\$([\d,\.]+)\s+(\w+)\s+([\d,\.]+)')
         matches = product_pattern.findall(pdf_text)
-        x = float(matches)
+        raise UserError(matches)
         
         for match in matches:
             product_code = match[0]  # Código
