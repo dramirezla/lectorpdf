@@ -83,7 +83,7 @@ class RecepFact(models.Model):
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
             if total_text:  # Validar si el texto no está vacío
                 # Extraer el número inicial hasta el segundo punto decimal
-                match = re.search(r'^\d+\.\d+', total_text)
+                match = re.search(r'\d+\.\d+', total_text)
                 if match:
                     total_cleaned = match.group(0)  # Captura el número válido
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
