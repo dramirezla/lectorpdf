@@ -87,9 +87,9 @@ class RecepFact(models.Model):
                 if total_cleaned:
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
-                    data['amount_total'] = 0.0  # Si no se puede limpiar, establecer como 0
+                    data['amount_total'] = 505.0  # Si no se puede limpiar, establecer como 0
             else:
-                data['amount_total'] = 0.0  # Valor por defecto si no se encuentra el campo
+                data['amount_total'] = 404.0  # Valor por defecto si no se encuentra el campo
         except ValueError as e:
             raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
     
