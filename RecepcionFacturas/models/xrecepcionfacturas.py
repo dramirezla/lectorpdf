@@ -1,6 +1,5 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-from odoo.tools import safe_eval
 import base64
 import zipfile
 import io
@@ -67,50 +66,40 @@ class RecepFact(models.Model):
 
 
     def parse_invoice_data(self, pdf_text):
-        """Parsea datos relevantes de la factura desde el texto."""
-        data = {}
-    
-        # Datos del proveedor
-        data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
-        data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
-    
-        # Datos de la factura
-        data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
-        data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
-        data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
-    
-        # Extraer y procesar el campo 'Total Neto'
-        try:
-            total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
-            
-            # Depuración con safe_eval
-            safe_eval(f"print('total_text: {total_text}')")  # Esto imprimirá el valor en consola/log
-            
-            if total_text:  # Validar si el texto no está vacío
-                total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
-                
-                # Otra depuración con safe_eval
-                safe_eval(f"print('total_cleaned: {total_cleaned}')")
-                
-                if total_cleaned:
-                    data['amount_total'] = float(total_cleaned)  # Convertir a float
-                else:
-                    data['amount_total'] = 0.0  # Si no se puede limpiar, establecer como 0
+    """Parsea datos relevantes de la factura desde el texto."""
+    data = {}
+
+    # Datos del proveedor
+    data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
+    data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
+
+    # Datos de la factura
+    data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
+    data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
+    data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
+
+    # Extraer y procesar el campo 'Total Neto'
+    try:
+        total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
+        if total_text:  # Validar si el texto no está vacío
+            # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
+            total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
+            if total_cleaned:
+                data['amount_total'] = float(total_cleaned)  # Convertir a float
             else:
-                data['amount_total'] = 0.0  # Valor por defecto si no se encuentra el campo
-        except ValueError as e:
-            raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
+                data['amount_total'] = 0.0  # Si no se puede limpiar, establecer como 0
+        else:
+            data['amount_total'] = 0.0  # Valor por defecto si no se encuentra el campo
+    except ValueError as e:
+        raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
+
+    # Cliente (si aplica en factura de proveedor)
+    data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
+    data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
+
+    return data
+
     
-        # Cliente (si aplica en factura de proveedor)
-        data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
-        data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
-    
-        return data
-
-
-
-
-
     def extract_field(self, text, start_key, end_key, start_offset=0):
         """Extrae un campo delimitado por claves de inicio y fin."""
         start_index = text.find(start_key) + len(start_key) + start_offset
