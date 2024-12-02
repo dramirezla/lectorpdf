@@ -65,7 +65,7 @@ class RecepFact(models.Model):
         return pdf_text
 
 
-    def parse_invoice_data(self, pdf_text):
+      def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
     
@@ -82,16 +82,15 @@ class RecepFact(models.Model):
         try:
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
             if total_text:  # Validar si el texto no está vacío
-                # Capturar la parte hasta el segundo punto decimal
-                total_cleaned = re.search(r'^([\d,.]+?\.\d{2})', total_text)  # Tomar hasta dos decimales
-                if total_cleaned:
-                    total_cleaned = total_cleaned.group(0)  # Extraer el valor del grupo
-                    total_cleaned = total_cleaned.replace(',', '')  # Eliminar las comas
+                # Extraer el número inicial hasta el segundo punto decimal
+                match = re.search(r'(\d+\.\d+)', total_text)
+                if match:
+                    total_cleaned = match.group(1)  # Captura el número válido
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
-                    data['amount_total'] = 505.0  # Si no se encuentra un valor válido
+                    data['amount_total'] = 505.0  # Valor por defecto si no se encuentra
             else:
-                data['amount_total'] = 404.0  # Valor por defecto si no se encuentra el campo
+                data['amount_total'] = 404.0  # Valor por defecto si el texto está vacío
         except ValueError as e:
             raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
     
@@ -100,6 +99,7 @@ class RecepFact(models.Model):
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
     
         return data
+
 
 
     
