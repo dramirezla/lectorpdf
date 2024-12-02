@@ -88,18 +88,58 @@ class RecepFact(models.Model):
                     total_cleaned = match.group(0).replace(',', '')  # Eliminar la coma
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
-                    data['amount_total'] = 505.0  # Valor por defecto si no se encuentra
+                    data['amount_total'] = 0.0  # Valor por defecto si no se encuentra
             else:
-                data['amount_total'] = 404.0  # Valor por defecto si el texto está vacío
+                data['amount_total'] = 0.0  # Valor por defecto si el texto está vacío
         except ValueError as e:
             raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
-    
+
+
+        # Extract product details
+        products = self.extract_product_details(pdf_text)
+        data['products'] = products
+        
         # Cliente (si aplica en factura de proveedor)
         data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
         data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
     
         return data
 
+    def extract_product_details(self, pdf_text):
+        """Extrae los detalles de los productos de la matriz."""
+        product_details = []
+        
+        # Expresión regular para extraer las filas de productos
+        # Esta regex busca el patrón de cada fila en la tabla
+        product_pattern = re.compile(r'(\d+)\s+([^\d]+)\s+([A-Za-z]+)\s+(\d+)\s+\$([\d,\.]+)\s+\$([\d,\.]+)\s+\$([\d,\.]+)\s+(\w+)\s+([\d,\.]+)')
+        
+        matches = product_pattern.findall(pdf_text)
+        
+        for match in matches:
+            product_code = match[0]  # Código
+            description = match[1].strip()  # Descripción
+            unit = match[2]  # Unidad de medida
+            quantity = float(match[3])  # Cantidad
+            price_unit = float(match[4].replace(',', ''))  # Precio unitario (eliminando comas)
+            discount = float(match[5].replace(',', ''))  # Descuento
+            charge = float(match[6].replace(',', ''))  # Cargo
+            tax = match[7]  # Impuesto (en este caso IVA u otros)
+            subtotal = float(match[8].replace(',', ''))  # Subtotal
+            
+            # Almacenamos los detalles del producto
+            product_details.append({
+                'product_code': product_code,
+                'description': description,
+                'unit': unit,
+                'quantity': quantity,
+                'price_unit': price_unit,
+                'discount': discount,
+                'charge': charge,
+                'tax': tax,
+                'subtotal': subtotal,
+            })
+        
+        return product_details
 
 
 
