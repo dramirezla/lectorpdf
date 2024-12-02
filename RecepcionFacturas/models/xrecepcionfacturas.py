@@ -164,20 +164,29 @@ class RecepFact(models.Model):
             invoice_data = self.parse_invoice_data(pdf_text)
     
             # Crear factura de proveedor en Odoo
-            self.env['account.move'].create({
+            invoice_vals = {
                 'move_type': 'in_invoice',
                 'partner_id': self.find_or_create_partner(
                     invoice_data['supplier_name'],
                     invoice_data['supplier_nit']
                 ).id,
-                'invoice_date': fields.Date.today(),#invoice_data['invoice_date'],
-                'invoice_date_due': fields.Date.today(),#invoice_data['due_date'],
-                'invoice_line_ids': [(0, 0, {
-                    'name': 'Cargos Facturados',
-                    'quantity': 1,
-                    'price_unit': invoice_data['amount_total'],
-                })]
-            })
+                'invoice_date': fields.Date.today(),  # Puedes usar invoice_data['invoice_date'] si es necesario
+                'invoice_date_due': fields.Date.today(),  # O invoice_data['due_date']
+                'invoice_line_ids': [],
+            }
+    
+            # Agregar las líneas de productos
+            for product in invoice_data['products']:
+                invoice_vals['invoice_line_ids'].append((0, 0, {
+                    'name': product['description'],
+                    'quantity': product['quantity'],
+                    'price_unit': product['price_unit'],
+                    'tax_ids': [(6, 0, [self.env.ref('account.tax_iva').id])],  # Asume que el impuesto es IVA
+                }))
+            
+            # Crear la factura
+            self.env['account.move'].create(invoice_vals)
+
     def find_or_create_partner(self, name, vat):
         """Busca o crea un partner basado en el nombre y NIT."""
         partner = self.env['res.partner'].search([('name', '=', name), ('vat', '=', vat)], limit=1)
