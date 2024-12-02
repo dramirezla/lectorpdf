@@ -80,7 +80,7 @@ class RecepFact(models.Model):
     
         # Extraer y procesar el campo 'Total Neto'
         try:
-            total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
+            total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
             if total_text:  # Validar si el texto no está vacío
                 # Limpiar el texto (eliminar caracteres no numéricos como '$' y ',')
                 total_cleaned = re.sub(r'[^\d.]', '', total_text.strip())
