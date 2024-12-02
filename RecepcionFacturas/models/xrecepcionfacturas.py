@@ -80,7 +80,7 @@ class RecepFact(models.Model):
     
         # Extraer y procesar el campo 'Total Neto'
         try:
-            total_text = self.extract_field(pdf_text, 'Total Neto:', '\n')
+            total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
             if total_text:  # Validar si el texto no está vacío
                 # Capturar la parte hasta el segundo punto decimal
                 total_cleaned = re.search(r'^([\d,.]+?\.\d{2})', total_text)  # Tomar hasta dos decimales
