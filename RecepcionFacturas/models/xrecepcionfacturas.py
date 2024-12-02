@@ -85,7 +85,7 @@ class RecepFact(models.Model):
                 # Extraer el número inicial hasta el segundo punto decimal
                 match = re.search(r'(\d+\.\d+)', total_text)
                 if match:
-                    total_cleaned = match.group(1)  # Captura el número válido
+                    total_cleaned = match.group(0)  # Captura el número válido
                     data['amount_total'] = float(total_cleaned)  # Convertir a float
                 else:
                     data['amount_total'] = 505.0  # Valor por defecto si no se encuentra
