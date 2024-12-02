@@ -172,20 +172,26 @@ class RecepFact(models.Model):
                 ).id,
                 'invoice_date': fields.Date.today(),  # Puedes usar invoice_data['invoice_date'] si es necesario
                 'invoice_date_due': fields.Date.today(),  # O invoice_data['due_date']
+                'amount_total': invoice_data['amount_total'],  # Asegurar que el total neto se agregue
                 'invoice_line_ids': [],
             }
+    
+            # Agregar el total neto como el valor total de la factura
+            invoice_vals['amount_total'] = invoice_data['amount_total']  # Agrega el Total Neto a la factura
     
             # Agregar las líneas de productos
             for product in invoice_data['products']:
                 invoice_vals['invoice_line_ids'].append((0, 0, {
-                    'name': product['description'],
-                    'quantity': product['quantity'],
-                    'price_unit': product['price_unit'],
+                    'name': product['description'],  # Descripción del producto
+                    'quantity': product['quantity'],  # Cantidad del producto
+                    'price_unit': product['price_unit'],  # Precio unitario del producto
                     'tax_ids': [(6, 0, [self.env.ref('account.tax_iva').id])],  # Asume que el impuesto es IVA
+                    'price_subtotal': product['subtotal'],  # Subtotal de la línea de producto
                 }))
-            
+    
             # Crear la factura
             self.env['account.move'].create(invoice_vals)
+
 
     def find_or_create_partner(self, name, vat):
         """Busca o crea un partner basado en el nombre y NIT."""
