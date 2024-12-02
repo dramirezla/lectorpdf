@@ -65,7 +65,7 @@ class RecepFact(models.Model):
         return pdf_text
 
 
-      def parse_invoice_data(self, pdf_text):
+    def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
     
