@@ -158,10 +158,10 @@ class RecepFact(models.Model):
             # Decodificar el archivo PDF desde base64
             pdf_binary = base64.b64decode(record.pdf_file)
             pdf_text = self.extract_text_from_pdf(pdf_binary)
-            raise UserError(pdf_text)
     
             # Parsear los datos de la factura
             invoice_data = self.parse_invoice_data(pdf_text)
+            raise UserError(invoice_data)
     
             # Crear factura de proveedor en Odoo
             invoice_vals = {
