@@ -107,12 +107,12 @@ class RecepFact(models.Model):
 
 
     def get_tax_id_from_string(self, tax_string):
-    """Convierte un texto de impuesto en un registro de impuesto de Odoo."""
-    tax_percentage = float(re.search(r'\d+\.\d+', tax_string).group())
-    tax = self.env['account.tax'].search([('amount', '=', tax_percentage)], limit=1)
-    if not tax:
-        raise UserError(f"No se encontró el impuesto con el porcentaje {tax_percentage}%.")
-    return [(4, tax.id)]  # Formato para Many2many
+        """Convierte un texto de impuesto en un registro de impuesto de Odoo."""
+        tax_percentage = float(re.search(r'\d+\.\d+', tax_string).group())
+        tax = self.env['account.tax'].search([('amount', '=', tax_percentage)], limit=1)
+        if not tax:
+            raise UserError(f"No se encontró el impuesto con el porcentaje {tax_percentage}%.")
+        return [(4, tax.id)]  # Formato para Many2many
 
 
     
