@@ -161,7 +161,7 @@ class RecepFact(models.Model):
     
             # Parsear los datos de la factura
             invoice_data = self.parse_invoice_data(pdf_text)
-            raise UserError(invoice_data)
+            raise UserError(f"Datos extraídos:\n{invoice_data['products']}")
     
             # Crear factura de proveedor en Odoo
             invoice_vals = {
