@@ -65,7 +65,7 @@ class RecepFact(models.Model):
         return pdf_text
 
 
-    def parse_invoice_data(self, pdf_text):
+   def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
     
@@ -81,29 +81,41 @@ class RecepFact(models.Model):
         # Extraer y procesar el campo 'Total Neto'
         try:
             total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
-            if total_text:  # Validar si el texto no está vacío
-                # Extraer el número inicial hasta el segundo punto decimal
+            if total_text:
                 match = re.search(r'\d+,\d+\.\d+', total_text)
                 if match:
-                    total_cleaned = match.group(0).replace(',', '')  # Eliminar la coma
-                    data['amount_total'] = float(total_cleaned)  # Convertir a float
+                    total_cleaned = match.group(0).replace(',', '')  # Reemplazar la coma por nada
+                    data['amount_total'] = float(total_cleaned)
                 else:
-                    data['amount_total'] = 0.0  # Valor por defecto si no se encuentra
+                    data['amount_total'] = 0.0
             else:
-                data['amount_total'] = 0.0  # Valor por defecto si el texto está vacío
+                data['amount_total'] = 0.0
         except ValueError as e:
             raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
-
-
-        # Extract product details
-        products = self.extract_product_details(pdf_text)
-        data['products'] = products
-        
-        # Cliente (si aplica en factura de proveedor)
-        data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
-        data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
+    
+        # Extraer productos (Tabla)
+        product_pattern = re.compile(
+            r"(?P<description>[^\n]+)\n(?P<unit>[A-Z]+)\s+(?P<quantity>\d+\.\d+)\s+\$(?P<price_unit>[\d,]+\.\d+).*?\$(?P<subtotal>[\d,]+\.\d+)",
+            re.DOTALL
+        )
+        matches = product_pattern.findall(pdf_text)
+    
+        # Debug: Verificar coincidencias encontradas
+        raise UserError(f"Coincidencias encontradas:\n{matches}")
+    
+        # Construir la lista de productos
+        data['products'] = [
+            {
+                'description': match[0].strip(),
+                'quantity': float(match[2]),
+                'price_unit': float(match[3].replace(',', '')),
+                'subtotal': float(match[4].replace(',', ''))
+            }
+            for match in matches
+        ]
     
         return data
+
 
     def extract_product_details(self, pdf_text):
         """Extrae los detalles de los productos de la matriz."""
