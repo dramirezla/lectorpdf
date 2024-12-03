@@ -111,7 +111,6 @@ class RecepFact(models.Model):
                 'price_unit': float(match[3].replace(',', '')),
                 'subtotal': float(match[4].replace(',', ''))
             }
-            for match in matches
         ]
     
         return data
