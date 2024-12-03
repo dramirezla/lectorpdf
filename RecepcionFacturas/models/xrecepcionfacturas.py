@@ -68,39 +68,51 @@ class RecepFact(models.Model):
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
         data = {}
-    
+        
         # Datos del proveedor
         data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
         data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
-    
+        
         # Datos de la factura
         data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
         data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
         data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
-    
-        # Extraer y procesar el campo 'Total Neto'
-        try:
-            total_text = self.extract_field(pdf_text, 'Total Neto:', '\t')
-            if total_text:  # Validar si el texto no está vacío
-                # Extraer el número inicial hasta el segundo punto decimal
-                match = re.search(r'\d+,\d+\.\d+', total_text)
-                if match:
-                    total_cleaned = match.group(0).replace(',', '')  # Eliminar la coma
-                    data['amount_total'] = float(total_cleaned)  # Convertir a float
-                else:
-                    data['amount_total'] = 505.0  # Valor por defecto si no se encuentra
-            else:
-                data['amount_total'] = 404.0  # Valor por defecto si el texto está vacío
-        except ValueError as e:
-            raise UserError(f"Error al procesar el campo 'Total Neto': {str(e)}")
-    
-        # Cliente (si aplica en factura de proveedor)
-        data['client_name'] = self.extract_field(pdf_text, 'Cliente:', '\n')
-        data['client_nit'] = self.extract_field(pdf_text, 'NIT:', '\n', start_offset=1)
-    
+        
+        # Extraer matriz de productos
+        product_lines = []
+        product_pattern = re.compile(r"^\d+\s+([\w\s\W]+?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s+\d+\.\d+%)\s+([\d.,]+)", re.MULTILINE)
+        
+        for match in product_pattern.finditer(pdf_text):
+            description = match.group(1).strip()
+            quantity = float(match.group(2).replace(",", ""))
+            unit_price = float(match.group(3).replace(",", ""))
+            discount = float(match.group(4).replace(",", ""))
+            charge = float(match.group(5).replace(",", ""))
+            tax = match.group(6).strip()
+            subtotal = float(match.group(7).replace(",", ""))
+        
+            product_lines.append({
+                'description': description,
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'discount': discount,
+                'charge': charge,
+                'tax': tax,
+                'subtotal': subtotal,
+            })
+        
+        data['product_lines'] = product_lines
+        
         return data
 
 
+    def get_tax_id_from_string(self, tax_string):
+    """Convierte un texto de impuesto en un registro de impuesto de Odoo."""
+    tax_percentage = float(re.search(r'\d+\.\d+', tax_string).group())
+    tax = self.env['account.tax'].search([('amount', '=', tax_percentage)], limit=1)
+    if not tax:
+        raise UserError(f"No se encontró el impuesto con el porcentaje {tax_percentage}%.")
+    return [(4, tax.id)]  # Formato para Many2many
 
 
     
@@ -124,20 +136,27 @@ class RecepFact(models.Model):
             invoice_data = self.parse_invoice_data(pdf_text)
     
             # Crear factura de proveedor en Odoo
-            self.env['account.move'].create({
+            invoice = self.env['account.move'].create({
                 'move_type': 'in_invoice',
                 'partner_id': self.find_or_create_partner(
                     invoice_data['supplier_name'],
                     invoice_data['supplier_nit']
                 ).id,
-                'invoice_date': fields.Date.today(),#invoice_data['invoice_date'],
-                'invoice_date_due': fields.Date.today(),#invoice_data['due_date'],
-                'invoice_line_ids': [(0, 0, {
-                    'name': 'Cargos Facturados',
-                    'quantity': 1,
-                    'price_unit': invoice_data['amount_total'],
-                })]
+                'invoice_date': fields.Date.today(),  # invoice_data['invoice_date'],
+                'invoice_date_due': fields.Date.today(),  # invoice_data['due_date'],
             })
+    
+            # Crear líneas de factura basadas en los productos extraídos
+            for line in invoice_data.get('product_lines', []):
+                self.env['account.move.line'].create({
+                    'move_id': invoice.id,
+                    'name': line['description'],  # Descripción del producto
+                    'quantity': line['quantity'],  # Cantidad
+                    'price_unit': line['unit_price'],  # Precio unitario
+                    'tax_ids': self.get_tax_id_from_string(line['tax']),  # Impuesto (debería implementarse)
+                    'subtotal': line['subtotal'],  # Subtotal
+                })
+
     def find_or_create_partner(self, name, vat):
         """Busca o crea un partner basado en el nombre y NIT."""
         partner = self.env['res.partner'].search([('name', '=', name), ('vat', '=', vat)], limit=1)
