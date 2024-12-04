@@ -79,7 +79,7 @@ class RecepFact(models.Model):
             pdf_text,
             re.DOTALL
         )
-        raise UserError(f"Datos procesados: {primera_fila}")
+        raise UserError(f"Datos procesados: {pdf_text}")
         
         for match in matches:
             description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
