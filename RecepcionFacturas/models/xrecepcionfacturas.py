@@ -73,25 +73,33 @@ class RecepFact(models.Model):
             'product_lines': [],
         }
     
-        # Extraer productos de la matriz
+        # Nueva expresión regular para productos
         matches = re.findall(
-            r'\d+\s+(.*?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)\s+([\d.,]+)', pdf_text
+            r'(\d+)\s+(\d+)\s+(.*?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)?\s*([\d.,]+)\s+\$([\d.,]+)',
+            pdf_text,
+            re.DOTALL
         )
+        ###_logger.info(f"Productos extraídos: {matches}")
+        
         for match in matches:
-            description = match[0].strip()
-            quantity = float(match[1].replace(',', ''))
-            unit_price = float(match[2].replace(',', ''))
-            taxes = match[4]
-            subtotal = float(match[5].replace(',', ''))
+            description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
+            quantity = float(match[3].replace(',', ''))
+            unit_price = float(match[4].replace(',', ''))
+            discount = float(match[5].replace(',', ''))
+            charge = float(match[6].replace(',', ''))
+            taxes = match[7] or '0%'  # Si no hay IVA, usamos '0%'
+            subtotal = float(match[8].replace(',', ''))
     
-            tax_ids = self.get_tax_id_from_string(taxes)
-            
             data['product_lines'].append({
                 'description': description,
                 'quantity': quantity,
                 'unit_price': unit_price,
-                'tax_ids': tax_ids,
+                'discount': discount,
+                'charge': charge,
+                'taxes': taxes,
+                'subtotal': subtotal,
             })
+    
         raise UserError(f"Datos procesados: {data}")
         return data
 
