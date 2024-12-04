@@ -79,7 +79,7 @@ class RecepFact(models.Model):
             pdf_text,
             re.DOTALL
         )
-        ###_logger.info(f"Productos extraídos: {matches}")
+        raise UserError(f"Datos procesados: {matches}")
         
         for match in matches:
             description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
@@ -100,7 +100,7 @@ class RecepFact(models.Model):
                 'subtotal': subtotal,
             })
     
-        raise UserError(f"Datos procesados: {data}")
+        
         return data
 
 
