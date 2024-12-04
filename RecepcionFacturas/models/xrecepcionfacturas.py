@@ -67,43 +67,34 @@ class RecepFact(models.Model):
 
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
-        data = {}
-        
-        # Datos del proveedor
-        data['supplier_name'] = self.extract_field(pdf_text, 'Nombre Comercial:', '\n')
-        data['supplier_nit'] = self.extract_field(pdf_text, 'NIT:', '\n')
-        
-        # Datos de la factura
-        data['invoice_number'] = self.extract_field(pdf_text, 'FACTURA ELECTR\u00d3NICA DE VENTA', '\n')
-        data['invoice_date'] = self.extract_field(pdf_text, 'Emisi\u00f3n:', '\n').split()[0]
-        data['due_date'] = self.extract_field(pdf_text, 'Vencimiento:', '\n')
-        
-        # Extraer matriz de productos
-        product_lines = []
-        product_pattern = re.compile(r"^\d+\s+([\w\s\W]+?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s+\d+\.\d+%)\s+([\d.,]+)", re.MULTILINE)
-        
-        for match in product_pattern.finditer(pdf_text):
-            description = match.group(1).strip()
-            quantity = float(match.group(2).replace(",", ""))
-            unit_price = float(match.group(3).replace(",", ""))
-            discount = float(match.group(4).replace(",", ""))
-            charge = float(match.group(5).replace(",", ""))
-            tax = match.group(6).strip()
-            subtotal = float(match.group(7).replace(",", ""))
-        
-            product_lines.append({
+        data = {
+            'supplier_name': self.extract_field(pdf_text, 'Nombre Comercial:', '\n'),
+            'supplier_nit': self.extract_field(pdf_text, 'NIT:', '\n'),
+            'product_lines': [],
+        }
+    
+        # Extraer productos de la matriz
+        matches = re.findall(
+            r'\d+\s+(.*?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)\s+([\d.,]+)', pdf_text
+        )
+        for match in matches:
+            description = match[0].strip()
+            quantity = float(match[1].replace(',', ''))
+            unit_price = float(match[2].replace(',', ''))
+            taxes = match[4]
+            subtotal = float(match[5].replace(',', ''))
+    
+            tax_ids = self.get_tax_id_from_string(taxes)
+            
+            data['product_lines'].append({
                 'description': description,
                 'quantity': quantity,
                 'unit_price': unit_price,
-                'discount': discount,
-                'charge': charge,
-                'tax': tax,
-                'subtotal': subtotal,
+                'tax_ids': tax_ids,
             })
-        
-        data['product_lines'] = product_lines
-        
+    
         return data
+
 
 
     def get_tax_id_from_string(self, tax_string):
@@ -134,6 +125,7 @@ class RecepFact(models.Model):
     
             # Parsear los datos de la factura
             invoice_data = self.parse_invoice_data(pdf_text)
+            product_lines = invoice_data.get('product_lines', [])
     
             # Crear factura de proveedor en Odoo
             invoice = self.env['account.move'].create({
@@ -142,20 +134,20 @@ class RecepFact(models.Model):
                     invoice_data['supplier_name'],
                     invoice_data['supplier_nit']
                 ).id,
-                'invoice_date': fields.Date.today(),  # invoice_data['invoice_date'],
-                'invoice_date_due': fields.Date.today(),  # invoice_data['due_date'],
+                'invoice_date': fields.Date.today(),  # Puedes ajustar según los datos de la factura
+                'invoice_date_due': fields.Date.today(),  # Puedes ajustar según los datos de la factura
             })
     
-            # Crear líneas de factura basadas en los productos extraídos
-            for line in invoice_data.get('product_lines', []):
+            # Agregar líneas de factura
+            for line in product_lines:
                 self.env['account.move.line'].create({
                     'move_id': invoice.id,
                     'name': line['description'],  # Descripción del producto
                     'quantity': line['quantity'],  # Cantidad
                     'price_unit': line['unit_price'],  # Precio unitario
-                    'tax_ids': self.get_tax_id_from_string(line['tax']),  # Impuesto (debería implementarse)
-                    'subtotal': line['subtotal'],  # Subtotal
+                    'tax_ids': line['tax_ids'],  # Impuestos
                 })
+
 
     def find_or_create_partner(self, name, vat):
         """Busca o crea un partner basado en el nombre y NIT."""
