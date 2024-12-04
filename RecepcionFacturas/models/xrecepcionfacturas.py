@@ -72,14 +72,14 @@ class RecepFact(models.Model):
             'supplier_nit': self.extract_field(pdf_text, 'NIT:', '\n'),
             'product_lines': [],
         }
-    
+        primera_fila = self.extract_field(pdf_text, 'SUBTOTAL', '\n')
         # Nueva expresión regular para productos
         matches = re.findall(
             r'(\d+)\s+(\d+)\s+([A-Za-z0-9\s]+(?:[A-Za-z0-9\s]+)*)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)?\s*([\d.,]+)\s+\$([\d.,]+)',
             pdf_text,
             re.DOTALL
         )
-        raise UserError(f"Datos procesados: {matches}")
+        raise UserError(f"Datos procesados: {primera_fila}")
         
         for match in matches:
             description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
