@@ -75,7 +75,7 @@ class RecepFact(models.Model):
     
         # Nueva expresión regular para productos
         matches = re.findall(
-            r'(\d+)\s+(\d+)\s+(.*?)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)?\s*([\d.,]+)\s+\$([\d.,]+)',
+            r'(\d+)\n+(\d+)\n+(.*?)\n+EA\n+([\d.,]+)\n+\$([\d.,]+)\n+\$([\d.,]+)\n+(IVA\n[\d.,]+%)?\n*([\d.,]+)\n+\$([\d.,]+)',
             pdf_text,
             re.DOTALL
         )
