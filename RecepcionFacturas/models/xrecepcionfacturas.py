@@ -92,7 +92,7 @@ class RecepFact(models.Model):
                 'unit_price': unit_price,
                 'tax_ids': tax_ids,
             })
-        raise UserError(data)
+        raise UserError(f"Datos procesados: {data}")
         return data
 
 
