@@ -52,21 +52,52 @@ class RecepFact(models.Model):
     # Definir el método parse_products_matrix
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
-        lines = products_matrix.strip().split("\n")
-        raise UserError(f"{lines}")
+        products = products_matrix.strip().split("\n")
+        raise UserError(f"{products}")
         # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
-        consolidated_lines = []
-        buffer = ""
-    
-        for line in lines:
-            if line.startswith("#") or (line[0].isdigit() and buffer):  # Comienza una nueva fila de productos
-                if buffer:  # Agregar línea anterior consolidada
-                    consolidated_lines.append(buffer.strip())
-                buffer = line
-            else:
-                buffer += f" {line.strip()}"
-        if buffer:  # Agregar la última línea consolidada
-            consolidated_lines.append(buffer.strip())
+        header = [
+            products[0], 
+            products[1], 
+            products[2], 
+            f"{products[3]} {products[4]}",  # 'UNIDAD DE MEDIDA'
+            products[5], 
+            f"{products[6]} {products[7]}",  # 'PRECIO UNITARIO'
+            products[8], 
+            products[9], 
+            products[10], 
+            products[11]
+        ]
+        
+        # Crear filas
+        rows = [
+            [
+                products[12],  # #
+                products[13],  # CÓDIGO
+                products[14],  # DESCRIPCIÓN
+                products[15],  # UNIDAD DE MEDIDA
+                products[16],  # CANTIDAD
+                products[17],  # PRECIO UNITARIO
+                products[18],  # DESCUENTO
+                products[19],  # CARGO
+                f"{products[20]} {products[21]}",  # IMPUESTOS
+                products[22]   # SUBTOTAL
+            ],
+            [
+                products[23],  # #
+                products[24],  # CÓDIGO
+                f"{products[25]} {products[26]}",  # DESCRIPCIÓN
+                products[27],  # UNIDAD DE MEDIDA
+                products[28],  # CANTIDAD
+                products[29],  # PRECIO UNITARIO
+                products[30],  # DESCUENTO
+                products[31],  # CARGO
+                products[32],  # IMPUESTOS
+                products[33]   # SUBTOTAL
+            ]
+        ]
+        
+        # Crear la matriz completa
+        consolidated_lines = [header] + rows
     
         # Saltar la primera línea (encabezados) y procesar las líneas restantes
         parsed_products = []
