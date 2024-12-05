@@ -70,9 +70,9 @@ class RecepFact(models.Model):
         ]
 
         matrix = []
-        matrix[0] = header
+        #matrix[0] = header
 
-        raise UserError(f"{products}")
+        raise UserError(f"{header}")
         
         
         raise UserError(f"{matrix}")
