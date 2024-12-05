@@ -23,35 +23,35 @@ class RecepFact(models.Model):
 
     # Definir el método parse_products_matrix
     def parse_products_matrix(self, products_matrix):
-        """Transforma la matriz de productos en un formato adecuado para Odoo."""
+        # Dividir el string en líneas
+        lines = products_matrix.strip().split("\n")
         parsed_products = []
-        lines = products_matrix.split('\n')  # Separar por líneas
         
         for line in lines:
-            # Saltar líneas vacías o mal formateadas
-            if not line.strip() or line.startswith('#'):
-                continue
-            
-            columns = line.split()  # Asumimos que las columnas están separadas por espacios
-            
-            # Validamos si la línea tiene el número correcto de columnas
-            if len(columns) < 11:
-                raise UserError(f"Fila con formato incorrecto: {line}")
+            # Dividir cada línea en columnas (ajusta según el separador)
+            columns = line.split()  # Usa espacios como separador, ajusta si es necesario
     
+            # Validar que la fila tenga al menos 10 columnas
+            if len(columns) < 10:
+                raise ValueError(f"Fila con formato incorrecto: {line}")
+            
+            # Procesar la fila
             parsed_products.append({
-                'CÓDIGO': columns[0],
-                'DESCRIPCIÓN': ' '.join(columns[1:-9]),  # Unimos las columnas intermedias como la descripción
-                'UNIDAD': columns[-9],
-                'CANTIDAD': columns[-8],
-                'PRECIO': columns[-7],
-                'UNITARIO': columns[-6],
-                'DESCUENTO': columns[-5],
-                'CARGO': columns[-4],
-                'IMPUESTOS': columns[-3:],  # Los impuestos pueden ser varios, así que tomamos el resto
-                'SUBTOTAL': columns[-2],
+                '#': columns[0],
+                'CÓDIGO': columns[1],
+                'DESCRIPCIÓN': columns[2],
+                'UNIDAD DE MEDIDA': columns[3],
+                'CANTIDAD': columns[4],
+                'PRECIO': columns[5],
+                'UNITARIO': columns[6],
+                'DESCUENTO': columns[7],
+                'CARGO': columns[8],
+                'IMPUESTOS': columns[9],
+                'SUBTOTAL': columns[10],
             })
-        
+    
         return parsed_products
+
 
 
 
