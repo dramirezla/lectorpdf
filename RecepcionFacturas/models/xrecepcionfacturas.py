@@ -32,8 +32,7 @@ class RecepFact(models.Model):
             columns = line.split()  # Usa espacios como separador, ajusta si es necesario
     
             # Validar que la fila tenga al menos 10 columnas
-            if len(columns) < 10:
-                raise ValueError(f"Fila con formato incorrecto: {line}")
+            raise ValueError(f"Fila con formato incorrecto: {line}")
             
             # Procesar la fila
             parsed_products.append({
