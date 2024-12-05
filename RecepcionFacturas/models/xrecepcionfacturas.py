@@ -19,56 +19,84 @@ class RecepFact(models.Model):
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
-
+    def check_attachments(self):
+        # Buscar adjuntos relacionados con este registro
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', 'recpfact2'),
+            ('res_id', '=', self.id)
+        ])
+        
+        if not attachments:
+            raise UserError('No se encontraron adjuntos en los mensajes internos.')
+    
+        # Procesar los adjuntos
+        for attachment in attachments:
+            if attachment.mimetype == 'application/zip':
+                # Descomprimir el archivo ZIP
+                zip_data = base64.b64decode(attachment.datas)
+                with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zf:
+                    for file_name in zf.namelist():
+                        if file_name.endswith('.pdf'):
+                            # Leer y asignar el archivo PDF al campo
+                            pdf_content = zf.read(file_name)
+                            self.recpfact_xml = base64.b64encode(pdf_content)
+                            self.pdf_file = base64.b64encode(pdf_content)
+                            self.recpfact_pdf_name = file_name
+                            
+                            # Procesar el archivo PDF
+                            self._process_pdf()
+                            #self.create_supplier_invoice()
+                            return
+                raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
 
     # Definir el método parse_products_matrix
-def parse_products_matrix(self, products_matrix):
-    # Dividir el string en líneas
-    lines = products_matrix.strip().split("\n")
-    
-    # Consolidar encabezados y líneas mal separadas
-    consolidated_lines = []
-    buffer = ""
-
-    for line in lines:
-        if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
-            if buffer:
-                consolidated_lines.append(buffer.strip())
-                buffer = ""
-            buffer = line
-        else:
-            buffer += f" {line.strip()}"
-    
-    if buffer:  # Agregar la última línea consolidada
-        consolidated_lines.append(buffer.strip())
-
-    # Procesar líneas consolidadas
-    parsed_products = []
-    for line in consolidated_lines:
-        columns = line.split()
+    def parse_products_matrix(self, products_matrix):
+        # Dividir el string en líneas
+        lines = products_matrix.strip().split("\n")
         
-        # Ignorar líneas vacías o con menos de 6 columnas
-        if len(columns) < 6:
-            continue  # O podrías lanzar un error personalizado si quieres reportar líneas incorrectas
+        # Consolidar encabezados y líneas mal separadas
+        consolidated_lines = []
+        buffer = ""
+    
+        for line in lines:
+            if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
+                if buffer:
+                    consolidated_lines.append(buffer.strip())
+                    buffer = ""
+                buffer = line
+            else:
+                buffer += f" {line.strip()}"
         
-        # Mapear columnas principales
-        try:
-            parsed_products.append({
-                '#': columns[0],
-                'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': " ".join(columns[2:-7]),  # Descripción puede abarcar varias columnas
-                'UNIDAD DE MEDIDA': columns[-7],
-                'CANTIDAD': columns[-6],
-                'PRECIO UNITARIO': columns[-5],  # Precio y unitario consolidado
-                'DESCUENTO': columns[-4],
-                'CARGO': columns[-3],
-                'IMPUESTOS': columns[-2],
-                'SUBTOTAL': columns[-1],
-            })
-        except IndexError:
-            raise ValueError(f"Línea con formato incorrecto: {line}")
-
-        raise ValueError(f"{parsed_products}")
+        if buffer:  # Agregar la última línea consolidada
+            consolidated_lines.append(buffer.strip())
+    
+        # Procesar líneas consolidadas
+        parsed_products = []
+        for line in consolidated_lines:
+            columns = line.split()
+            
+            # Ignorar líneas vacías o con menos de 6 columnas
+            if len(columns) < 6:
+                continue  # O podrías lanzar un error personalizado si quieres reportar líneas incorrectas
+            
+            # Mapear columnas principales
+            try:
+                parsed_products.append({
+                    '#': columns[0],
+                    'CÓDIGO': columns[1],
+                    'DESCRIPCIÓN': " ".join(columns[2:-7]),  # Descripción puede abarcar varias columnas
+                    'UNIDAD DE MEDIDA': columns[-7],
+                    'CANTIDAD': columns[-6],
+                    'PRECIO UNITARIO': columns[-5],  # Precio y unitario consolidado
+                    'DESCUENTO': columns[-4],
+                    'CARGO': columns[-3],
+                    'IMPUESTOS': columns[-2],
+                    'SUBTOTAL': columns[-1],
+                })
+            except IndexError:
+                raise ValueError(f"Línea con formato incorrecto: {line}")
+    
+            raise ValueError(f"{parsed_products}")
         return parsed_products
 
 
@@ -102,36 +130,6 @@ def parse_products_matrix(self, products_matrix):
         
         return data
 
-
-    def check_attachments(self):
-        # Buscar adjuntos relacionados con este registro
-        attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', 'recpfact2'),
-            ('res_id', '=', self.id)
-        ])
-        
-        if not attachments:
-            raise UserError('No se encontraron adjuntos en los mensajes internos.')
-
-        # Procesar los adjuntos
-        for attachment in attachments:
-            if attachment.mimetype == 'application/zip':
-                # Descomprimir el archivo ZIP
-                zip_data = base64.b64decode(attachment.datas)
-                with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zf:
-                    for file_name in zf.namelist():
-                        if file_name.endswith('.pdf'):
-                            # Leer y asignar el archivo PDF al campo
-                            pdf_content = zf.read(file_name)
-                            self.recpfact_xml = base64.b64encode(pdf_content)
-                            self.pdf_file = base64.b64encode(pdf_content)
-                            self.recpfact_pdf_name = file_name
-                            
-                            # Procesar el archivo PDF
-                            self._process_pdf()
-                            #self.create_supplier_invoice()
-                            return
-                raise UserError('El archivo ZIP no contiene ningún archivo PDF.')
 
     #def _process_pdf(self, pdf_content):
     
