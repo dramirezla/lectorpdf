@@ -54,58 +54,44 @@ class RecepFact(models.Model):
     # Definir el método parse_products_matrix
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
-        products = products_matrix.strip().split("\n")
-        # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
-        header = [
-            products[0], 
-            products[1], 
-            products[2], 
-            f"{products[3]} {products[4]}",  # 'UNIDAD DE MEDIDA'
-            products[5], 
-            f"{products[6]} {products[7]}",  # 'PRECIO UNITARIO'
-            products[8], 
-            products[9], 
-            products[10], 
-            products[11]
-        ]
-
-        matrix = []
-        #matrix[0] = header
-
-        raise UserError(f"{header}")
+        lines = products_matrix.strip().split("\n")
         
-        
-        raise UserError(f"{matrix}")
+        # Consolidar líneas mal separadas
+        consolidated_lines = []
+        buffer = ""
+    
+        for line in lines:
+            if line.startswith("#") or (line[0].isdigit() and buffer):  # Comienza una nueva fila
+                if buffer:
+                    consolidated_lines.append(buffer.strip())
+                buffer = line
+            else:
+                buffer += f" {line.strip()}"
+        if buffer:
+            consolidated_lines.append(buffer.strip())
+    
+        # Procesar las líneas después del encabezado
         parsed_products = []
-        
         for line in consolidated_lines:
-            if line.startswith("#"):  # Ignorar encabezados
+            if line.startswith("#"):  # Ignorar encabezado
                 continue
     
             columns = line.split()  # Dividir la línea en columnas
     
-            # Validar que haya suficientes columnas para procesar
+            # Validar que haya suficientes columnas para procesa
     
-            # Mapear columnas correctamente
+            # Mapear únicamente las columnas necesarias
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Asumimos que la descripción es todo antes de las últimas 8 columnas
-                'UNIDAD DE MEDIDA': columns[-8],
-                'CANTIDAD': columns[-7],
-                'PRECIO UNITARIO': columns[-6],  # Precio consolidado
-                'DESCUENTO': columns[-5],
-                'CARGO': columns[-4],
-                'IMPUESTOS': " ".join(columns[-3:-1]),  # Impuestos puede incluir varios términos
+                'DESCRIPCIÓN': " ".join(columns[2:-5]),  # Descripción hasta antes de las últimas 5 columnas
+                'CANTIDAD': columns[-5],
+                'PRECIO UNITARIO': columns[-4],
+                'IMPUESTOS': " ".join(columns[-3:-1]),  # Impuestos agrupados
                 'SUBTOTAL': columns[-1],
             })
         raise UserError(f"{parsed_products}")
         return parsed_products
-
-
-
-
-
 
 
 
