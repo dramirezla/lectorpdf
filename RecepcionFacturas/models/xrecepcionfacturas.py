@@ -68,7 +68,8 @@ def parse_products_matrix(self, products_matrix):
         except IndexError:
             raise ValueError(f"Línea con formato incorrecto: {line}")
 
-    return parsed_products
+        raise ValueError(f"{parsed_products}")
+        return parsed_products
 
 
 
