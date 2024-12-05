@@ -79,7 +79,11 @@ class RecepFact(models.Model):
             pdf_text,
             re.DOTALL
         )
-        raise UserError(f"{products_matrix}")
+        ###raise UserError(f"{products_matrix}")
+        parsed_products = parse_products_matrix(products_matrix)
+        raise UserError(f"{parsed_products}")
+        #for product in parsed_products:
+            #print(product)
         
         for match in matches:
             description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
@@ -155,6 +159,47 @@ class RecepFact(models.Model):
                     'price_unit': line['unit_price'],  # Precio unitario
                     'tax_ids': line['tax_ids'],  # Impuestos
                 })
+    def parse_products_matrix(products_matrix):
+        """Convierte la tabla de productos en una estructura procesable."""
+        # Dividir por líneas
+        lines = products_matrix.strip().split('\n')
+    
+        # Buscar los encabezados y la fila de datos inicial
+        headers = []
+        for idx, line in enumerate(lines):
+            if "CÓDIGO" in line and "SUBTOTAL" in line:
+                headers = line.split()  # Encabezados separados por espacio
+                data_start_idx = idx + 1
+                break
+    
+        if not headers:
+            raise ValueError("No se encontraron encabezados en la tabla.")
+    
+        # Procesar líneas de datos
+        products = []
+        for line in lines[data_start_idx:]:
+            if not line.strip():  # Saltar líneas vacías
+                continue
+    
+            # Dividir la línea en columnas
+            columns = line.split()
+            if len(columns) < len(headers):  # Combinar líneas divididas por saltos
+                columns[-1] += " " + lines[data_start_idx + 1].strip()
+                data_start_idx += 1
+    
+            # Procesar columna de impuestos
+            if "IMPUESTOS" in headers:
+                taxes_idx = headers.index("IMPUESTOS")
+                taxes = columns[taxes_idx:]
+                # Agrupar múltiples valores en una lista
+                taxes_combined = " ".join(taxes).split(",")
+                columns = columns[:taxes_idx] + [taxes_combined]
+    
+            # Construir el diccionario de producto
+            product = dict(zip(headers, columns))
+            products.append(product)
+    
+        return products
 
 
     def find_or_create_partner(self, name, vat):
