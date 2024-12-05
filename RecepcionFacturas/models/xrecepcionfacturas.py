@@ -25,32 +25,54 @@ class RecepFact(models.Model):
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
-        parsed_products = []
-        raise ValueError(f"{lines}")
-        
-        for line in lines:
-            # Dividir cada línea en columnas (ajusta según el separador)
-            columns = line.split()  # Usa espacios como separador, ajusta si es necesario
+        consolidated_lines = []
     
-            # Validar que la fila tenga al menos 10 columnas
-            
-            
-            # Procesar la fila
+        # Consolidar encabezados y columnas mal separadas
+        for line in lines:
+            # Dividir por espacios iniciales
+            columns = line.split()
+    
+            # Detectar y unir encabezados que se separaron incorrectamente
+            if len(columns) > 0 and columns[0] in ["#", "1", "2"]:  # Detectar inicio de filas válidas
+                if consolidated_lines and "CÓDIGO" not in consolidated_lines[-1]:
+                    # Unir las partes divididas de encabezados como "UNIDAD DE MEDIDA"
+                    consolidated_lines[-1] = f"{consolidated_lines[-1]} {columns[0]}"
+                else:
+                    consolidated_lines.append(line)
+            else:
+                # Unir líneas que no comienzan con un número o encabezado
+                if consolidated_lines:
+                    consolidated_lines[-1] += f" {line}"
+                else:
+                    consolidated_lines.append(line)
+    
+        # Procesar líneas consolidadas
+        raise UserError(f"{consolidated_lines}")
+        parsed_products = []
+        for line in consolidated_lines:
+            columns = line.split()  # Volver a dividir tras consolidar
+    
+            # Validar longitud mínima para evitar errores
+            if len(columns) < 10:
+                raise ValueError(f"Línea con formato incorrecto: {line}")
+    
+            # Procesar y mapear columnas
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': columns[2],
-                'UNIDAD DE MEDIDA': columns[3],
-                'CANTIDAD': columns[4],
-                'PRECIO': columns[5],
-                'UNITARIO': columns[6],
-                'DESCUENTO': columns[7],
-                'CARGO': columns[8],
-                'IMPUESTOS': columns[9],
-                'SUBTOTAL': columns[10],
+                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Descripción puede ocupar varias columnas
+                'UNIDAD DE MEDIDA': columns[-8],
+                'CANTIDAD': columns[-7],
+                'PRECIO': columns[-6],
+                'UNITARIO': columns[-5],
+                'DESCUENTO': columns[-4],
+                'CARGO': columns[-3],
+                'IMPUESTOS': columns[-2],
+                'SUBTOTAL': columns[-1],
             })
     
         return parsed_products
+
 
 
 
