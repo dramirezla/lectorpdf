@@ -55,8 +55,6 @@ class RecepFact(models.Model):
                 continue  # Ignorar encabezados
     
             # Validar longitud mínima
-            if len(columns) < 10:
-                raise ValueError(f"Línea con formato incorrecto: {line}")
     
             # Mapear columnas
             parsed_products.append({
