@@ -22,35 +22,37 @@ class RecepFact(models.Model):
 
 
     # Definir el método parse_products_matrix
-    def parse_products_matrix(self, products_matrix):
-        """Procesa la matriz de productos y la convierte en una lista de diccionarios."""
+    def parse_products_matrix(products_matrix):
+        """Transforma la matriz de productos en un formato adecuado para Odoo."""
         parsed_products = []
+        lines = products_matrix.split('\n')  # Separar por líneas
         
-        # Aquí asumimos que 'products_matrix' es un string con datos separados por saltos de línea
-        rows = products_matrix.split('\n')
-        
-        for row in rows:
-            columns = row.split()  # Suponemos que las columnas están separadas por espacio
+        for line in lines:
+            # Saltar líneas vacías o mal formateadas
+            if not line.strip() or line.startswith('#'):
+                continue
             
-            # Validamos si la fila tiene el número esperado de columnas
-            if len(columns) >= 7:  # Ajusta este número según la cantidad mínima de columnas esperadas
-                product = {
-                    'CÓDIGO': columns[0],
-                    'DESCRIPCIÓN': columns[1],  # Suponemos que la descripción está en la segunda columna
-                    'UNIDAD': columns[2],
-                    'MEDIDA': columns[3],
-                    'PRECIO': columns[4],
-                    'UNITARIO': columns[5],
-                    'DESCUENTO': columns[6],
-                    'IMPUESTOS': columns[7:] if len(columns) > 7 else [],  # Impuestos opcionales
-                    'SUBTOTAL': columns[-1],  # Suponemos que el último valor es el subtotal
-                }
-                parsed_products.append(product)
-            else:
-                # Si no tiene suficientes columnas, puedes imprimir una advertencia o hacer algo más.
-                raise UserError(f"Fila con formato incorrecto: {row}")
+            columns = line.split()  # Asumimos que las columnas están separadas por espacios
+            
+            # Validamos si la línea tiene el número correcto de columnas
+            if len(columns) < 11:
+                raise UserError(f"Fila con formato incorrecto: {line}")
+    
+            parsed_products.append({
+                'CÓDIGO': columns[0],
+                'DESCRIPCIÓN': ' '.join(columns[1:-9]),  # Unimos las columnas intermedias como la descripción
+                'UNIDAD': columns[-9],
+                'CANTIDAD': columns[-8],
+                'PRECIO': columns[-7],
+                'UNITARIO': columns[-6],
+                'DESCUENTO': columns[-5],
+                'CARGO': columns[-4],
+                'IMPUESTOS': columns[-3:],  # Los impuestos pueden ser varios, así que tomamos el resto
+                'SUBTOTAL': columns[-2],
+            })
         
         return parsed_products
+
 
 
     def parse_invoice_data(self, pdf_text):
