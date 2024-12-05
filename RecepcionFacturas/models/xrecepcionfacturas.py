@@ -78,8 +78,6 @@ class RecepFact(models.Model):
             columns = line.split()  # Dividir la línea en columnas
     
             # Validar que haya suficientes columnas
-            if len(columns) < 7:
-                raise ValueError(f"Línea con formato incorrecto: {line}")
             
             # Mapear las columnas a las claves requeridas
             parsed_products.append({
