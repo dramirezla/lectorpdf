@@ -61,24 +61,22 @@ class RecepFact(models.Model):
         buffer = ""
     
         for line in lines:
-            if line.startswith("#") or (line[0].isdigit() and buffer):  # Comienza una nueva fila
-                if buffer:
-                    consolidated_lines.append(buffer.strip())
+            if line[0].isdigit() and (buffer and not buffer[0].isdigit()):  # Nueva fila detectada
+                consolidated_lines.append(buffer.strip())
                 buffer = line
             else:
                 buffer += f" {line.strip()}"
         if buffer:
             consolidated_lines.append(buffer.strip())
     
-        # Procesar las líneas después del encabezado
+        # Procesar las líneas
         parsed_products = []
         for line in consolidated_lines:
-            if line.startswith("#"):  # Ignorar encabezado
-                continue
-    
             columns = line.split()  # Dividir la línea en columnas
     
-            # Validar que haya suficientes columnas para procesa
+            # Validar que haya suficientes columnas para procesar
+            if len(columns) < 7:
+                raise ValueError(f"Línea con formato incorrecto: {line}")
     
             # Mapear únicamente las columnas necesarias
             parsed_products.append({
