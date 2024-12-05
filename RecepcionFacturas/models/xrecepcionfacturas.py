@@ -69,7 +69,8 @@ class RecepFact(models.Model):
                 'IMPUESTOS': columns[-2],
                 'SUBTOTAL': columns[-1],
             })
-    
+
+        raise UserError(f"{parsed_products}")
         return parsed_products
 
 
