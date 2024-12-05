@@ -55,9 +55,6 @@ class RecepFact(models.Model):
                 continue  # Ignorar encabezados
     
             # Validar longitud mínima
-            if len(columns) < 9:  # Ahora requerimos al menos 9 columnas después de consolidar PRECIO_UNITARIO
-                raise ValueError(f"Línea con formato incorrecto: {line}")
-    
             # Mapear columnas
             parsed_products.append({
                 '#': columns[0],
