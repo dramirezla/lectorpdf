@@ -54,7 +54,7 @@ class RecepFact(models.Model):
         # Dividir el string en líneas
         products = products_matrix.strip().split("\n")
         # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
-        header = [
+                header = [
             products[0], 
             products[1], 
             products[2], 
@@ -68,39 +68,54 @@ class RecepFact(models.Model):
         ]
         
         # Inicializar la matriz final con el encabezado
-        consolidated_lines = [header]
+        matrix = [header]
         
-        # Procesar las filas dinámicamente
-        data_start_index = len(header)  # Índice donde comienzan los datos
+        # Índice inicial de los datos
+        data_start_index = len(header)
+        
+        # Procesar filas dinámicamente
         while data_start_index < len(products):
-            # Extraer las celdas para la fila actual
-            row = products[data_start_index:data_start_index + len(header)]
+            row = []
         
-            # Ajustar si la descripción o los impuestos tienen datos extendidos
-            # Combinar descripción extendida
-            if len(row) > 3 and not row[3].startswith("EA"):
-                row[2] += f" {row.pop(3)}"
-            # Combinar impuestos extendidos
-            if len(row) > 8 and not row[8].startswith("$"):
-                row[8] += f" {row.pop(8)}"
+            # Agregar los primeros valores fijos de la fila
+            row.append(products[data_start_index])  # #
+            row.append(products[data_start_index + 1])  # CÓDIGO
         
-            # Limitar la fila al tamaño correcto
-            row = row[:len(header)]
+            # Combinar descripción completa
+            description = products[data_start_index + 2]
+            if not products[data_start_index + 3].startswith("EA"):
+                description += f" {products[data_start_index + 3]}"
+                offset = 1
+            else:
+                offset = 0
+            row.append(description)  # DESCRIPCIÓN
+        
+            # Continuar con el resto de las columnas
+            row.append(products[data_start_index + 3 + offset])  # UNIDAD DE MEDIDA
+            row.append(products[data_start_index + 4 + offset])  # CANTIDAD
+            row.append(products[data_start_index + 5 + offset])  # PRECIO UNITARIO
+            row.append(products[data_start_index + 6 + offset])  # DESCUENTO
+            row.append(products[data_start_index + 7 + offset])  # CARGO
+        
+            # Combinar impuestos completos
+            impuestos = products[data_start_index + 8 + offset]
+            if not products[data_start_index + 9 + offset].startswith("$"):
+                impuestos += f" {products[data_start_index + 9 + offset]}"
+                offset += 1
+            row.append(impuestos)  # IMPUESTOS
+        
+            row.append(products[data_start_index + 9 + offset])  # SUBTOTAL
         
             # Agregar la fila procesada a la matriz
-            consolidated_lines.append(row)
+            matrix.append(row)
         
-            # Mover al siguiente conjunto de datos
-            data_start_index += len(header)
-        
-        # Imprimir la matriz final
-        raise UserError(f"{consolidated_lines}")
-        for row in consolidated_lines:
-            print(row)
-        # Crear la matriz completa
-        # consolidated_lines = [header] + rows
-    
-        # Saltar la primera línea (encabezados) y procesar las líneas restantes
+            # Actualizar el índice para la siguiente fila
+            data_start_index += 10 + offset
+                # Crear la matriz completa
+                # consolidated_lines = [header] + rows
+            
+                # Saltar la primera línea (encabezados) y procesar las líneas restantes
+        raise UserError(f"{matrix}")
         parsed_products = []
         
         for line in consolidated_lines:
