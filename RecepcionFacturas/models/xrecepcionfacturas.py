@@ -53,6 +53,30 @@ class RecepFact(models.Model):
         return parsed_products
 
 
+    def parse_invoice_data(self, pdf_text):
+        """Parsea datos relevantes de la factura desde el texto."""
+        data = {
+            'supplier_name': self.extract_field(pdf_text, 'Nombre Comercial:', '\n'),
+            'supplier_nit': self.extract_field(pdf_text, 'NIT:', '\n'),
+            'product_lines': [],
+        }
+        products_matrix = self.extract_field(pdf_text, 'acuerdo', 'CUFE')
+        
+        # Llamada correcta a la función parse_products_matrix usando self
+        parsed_products = self.parse_products_matrix(products_matrix)
+        
+        for product in parsed_products:
+            data['product_lines'].append({
+                'description': product['DESCRIPCIÓN'],
+                'quantity': float(product['MEDIDA'].replace(',', '')),
+                'unit_price': float(product['PRECIO'].replace('$', '').replace(',', '')),
+                'discount': float(product['DESCUENTO'].replace('$', '').replace(',', '')),
+                'charge': float(product['UNITARIO'].replace('$', '').replace(',', '')),
+                'taxes': product['IMPUESTOS'],
+                'subtotal': float(product['SUBTOTAL'].replace('$', '').replace(',', '')),
+            })
+        
+        return data
 
 
     def check_attachments(self):
