@@ -22,7 +22,7 @@ class RecepFact(models.Model):
 
 
     # Definir el método parse_products_matrix
-    def parse_products_matrix(products_matrix):
+    def parse_products_matrix(self, products_matrix):
         """Transforma la matriz de productos en un formato adecuado para Odoo."""
         parsed_products = []
         lines = products_matrix.split('\n')  # Separar por líneas
