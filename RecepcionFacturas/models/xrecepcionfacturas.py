@@ -53,7 +53,7 @@ class RecepFact(models.Model):
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
-        
+        raise UserError(f"{lines}")
         # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
         consolidated_lines = []
         buffer = ""
