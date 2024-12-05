@@ -26,13 +26,14 @@ class RecepFact(models.Model):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
         parsed_products = []
+        raise ValueError(f"Fila con formato incorrecto: {line}")
         
         for line in lines:
             # Dividir cada línea en columnas (ajusta según el separador)
             columns = line.split()  # Usa espacios como separador, ajusta si es necesario
     
             # Validar que la fila tenga al menos 10 columnas
-            raise ValueError(f"Fila con formato incorrecto: {line}")
+            
             
             # Procesar la fila
             parsed_products.append({
