@@ -47,7 +47,6 @@ class RecepFact(models.Model):
                     consolidated_lines.append(line)
     
         # Procesar líneas consolidadas
-        raise UserError(f"{consolidated_lines}")
         parsed_products = []
         for line in consolidated_lines:
             columns = line.split()  # Volver a dividir tras consolidar
