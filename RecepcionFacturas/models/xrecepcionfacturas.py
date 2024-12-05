@@ -21,7 +21,72 @@ class RecepFact(models.Model):
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
-    
+
+    class RecepFact(models.Model):
+    _name = 'recpfact2'
+    _description = 'Recep Fact'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+
+    # Definición de campos
+    name = fields.Char(string="Nombre")
+    description = fields.Text(string="Descripción")
+    recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
+    pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
+    recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
+
+    # Definir el método parse_products_matrix
+    def parse_products_matrix(self, products_matrix):
+        """Procesa la matriz de productos y la convierte en una lista de diccionarios."""
+        parsed_products = []
+        
+        # Aquí asumimos que 'products_matrix' es un string con datos separados por saltos de línea
+        rows = products_matrix.split('\n')
+        
+        for row in rows:
+            columns = row.split()  # Suponemos que las columnas están separadas por espacio
+            if len(columns) > 1:  # Asegurarse de que la fila contiene datos válidos
+                product = {
+                    'CÓDIGO': columns[0],
+                    'DESCRIPCIÓN': columns[1],  # Suponemos que la descripción está en la segunda columna
+                    'UNIDAD': columns[2],
+                    'MEDIDA': columns[3],
+                    'PRECIO': columns[4],
+                    'UNITARIO': columns[5],
+                    'DESCUENTO': columns[6],
+                    'IMPUESTOS': columns[7:],  # El resto se considera como impuestos
+                    'SUBTOTAL': columns[-1],  # Suponemos que el último valor es el subtotal
+                }
+                parsed_products.append(product)
+
+        return parsed_products
+
+    def parse_invoice_data(self, pdf_text):
+        """Parsea datos relevantes de la factura desde el texto."""
+        data = {
+            'supplier_name': self.extract_field(pdf_text, 'Nombre Comercial:', '\n'),
+            'supplier_nit': self.extract_field(pdf_text, 'NIT:', '\n'),
+            'product_lines': [],
+        }
+        products_matrix = self.extract_field(pdf_text, 'acuerdo', 'CUFE')
+        
+        # Llamada correcta a la función parse_products_matrix
+        parsed_products = self.parse_products_matrix(products_matrix)
+
+        raise UserError(f"{parsed_products}")
+        
+        for product in parsed_products:
+            data['product_lines'].append({
+                'description': product['DESCRIPCIÓN'],
+                'quantity': float(product['MEDIDA'].replace(',', '')),
+                'unit_price': float(product['PRECIO'].replace('$', '').replace(',', '')),
+                'discount': float(product['DESCUENTO'].replace('$', '').replace(',', '')),
+                'charge': float(product['UNITARIO'].replace('$', '').replace(',', '')),
+                'taxes': product['IMPUESTOS'],
+                'subtotal': float(product['SUBTOTAL'].replace('$', '').replace(',', '')),
+            })
+        
+        return data
+
 
     def check_attachments(self):
         # Buscar adjuntos relacionados con este registro
@@ -159,47 +224,6 @@ class RecepFact(models.Model):
                     'price_unit': line['unit_price'],  # Precio unitario
                     'tax_ids': line['tax_ids'],  # Impuestos
                 })
-    def parse_products_matrix(products_matrix):
-        """Convierte la tabla de productos en una estructura procesable."""
-        # Dividir por líneas
-        lines = products_matrix.strip().split('\n')
-    
-        # Buscar los encabezados y la fila de datos inicial
-        headers = []
-        for idx, line in enumerate(lines):
-            if "CÓDIGO" in line and "SUBTOTAL" in line:
-                headers = line.split()  # Encabezados separados por espacio
-                data_start_idx = idx + 1
-                break
-    
-        if not headers:
-            raise ValueError("No se encontraron encabezados en la tabla.")
-    
-        # Procesar líneas de datos
-        products = []
-        for line in lines[data_start_idx:]:
-            if not line.strip():  # Saltar líneas vacías
-                continue
-    
-            # Dividir la línea en columnas
-            columns = line.split()
-            if len(columns) < len(headers):  # Combinar líneas divididas por saltos
-                columns[-1] += " " + lines[data_start_idx + 1].strip()
-                data_start_idx += 1
-    
-            # Procesar columna de impuestos
-            if "IMPUESTOS" in headers:
-                taxes_idx = headers.index("IMPUESTOS")
-                taxes = columns[taxes_idx:]
-                # Agrupar múltiples valores en una lista
-                taxes_combined = " ".join(taxes).split(",")
-                columns = columns[:taxes_idx] + [taxes_combined]
-    
-            # Construir el diccionario de producto
-            product = dict(zip(headers, columns))
-            products.append(product)
-    
-        return products
 
 
     def find_or_create_partner(self, name, vat):
