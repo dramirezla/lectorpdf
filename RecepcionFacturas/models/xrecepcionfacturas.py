@@ -55,16 +55,17 @@ class RecepFact(models.Model):
                 continue  # Ignorar encabezados
     
             # Validar longitud mínima
+            if len(columns) < 9:  # Ahora requerimos al menos 9 columnas después de consolidar PRECIO_UNITARIO
+                raise ValueError(f"Línea con formato incorrecto: {line}")
     
             # Mapear columnas
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Descripción puede abarcar varias columnas
-                'UNIDAD DE MEDIDA': columns[-8],
-                'CANTIDAD': columns[-7],
-                'PRECIO': columns[-6],
-                'UNITARIO': columns[-5],
+                'DESCRIPCIÓN': " ".join(columns[2:-7]),  # Descripción puede abarcar varias columnas
+                'UNIDAD DE MEDIDA': columns[-7],
+                'CANTIDAD': columns[-6],
+                'PRECIO UNITARIO': columns[-5],  # Precio y unitario consolidado
                 'DESCUENTO': columns[-4],
                 'CARGO': columns[-3],
                 'IMPUESTOS': columns[-2],
@@ -72,6 +73,7 @@ class RecepFact(models.Model):
             })
         raise UserError(f"{parsed_products}")
         return parsed_products
+
 
 
 
