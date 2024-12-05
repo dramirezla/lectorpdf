@@ -13,26 +13,13 @@ class RecepFact(models.Model):
     _description = 'Recep Fact'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
-
-    ##no
-    
+    #Definicion de campos
     name = fields.Char(string="Nombre")
     description = fields.Text(string="Descripción")
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
 
-    class RecepFact(models.Model):
-    _name = 'recpfact2'
-    _description = 'Recep Fact'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
-
-    # Definición de campos
-    name = fields.Char(string="Nombre")
-    description = fields.Text(string="Descripción")
-    recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
-    pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
-    recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
 
     # Definir el método parse_products_matrix
     def parse_products_matrix(self, products_matrix):
