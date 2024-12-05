@@ -19,6 +19,8 @@ class RecepFact(models.Model):
     recpfact_xml = fields.Binary(string="Archivo PDF", attachment=True)
     pdf_file = fields.Binary(string='Archivo PDF', attachment=True)
     recpfact_pdf_name = fields.Char(string="Nombre del Archivo PDF")
+
+    
     def check_attachments(self):
         # Buscar adjuntos relacionados con este registro
         attachments = self.env['ir.attachment'].search([
@@ -66,55 +68,13 @@ class RecepFact(models.Model):
             products[10], 
             products[11]
         ]
+
+        matrix = []
+        matrix[0] = header
+
+        raise UserError(f"{products}")
         
-        # Inicializar la matriz final con el encabezado
-        matrix = [header]
         
-        # Índice inicial de los datos
-        data_start_index = len(header)
-        
-        # Procesar filas dinámicamente
-        while data_start_index < len(products):
-            row = []
-        
-            # Agregar los primeros valores fijos de la fila
-            row.append(products[data_start_index])  # #
-            row.append(products[data_start_index + 1])  # CÓDIGO
-        
-            # Combinar descripción completa
-            description = products[data_start_index + 2]
-            if not products[data_start_index + 3].startswith("EA"):
-                description += f" {products[data_start_index + 3]}"
-                offset = 1
-            else:
-                offset = 0
-            row.append(description)  # DESCRIPCIÓN
-        
-            # Continuar con el resto de las columnas
-            row.append(products[data_start_index + 3 + offset])  # UNIDAD DE MEDIDA
-            row.append(products[data_start_index + 4 + offset])  # CANTIDAD
-            row.append(products[data_start_index + 5 + offset])  # PRECIO UNITARIO
-            row.append(products[data_start_index + 6 + offset])  # DESCUENTO
-            row.append(products[data_start_index + 7 + offset])  # CARGO
-        
-            # Combinar impuestos completos
-            impuestos = products[data_start_index + 8 + offset]
-            if not products[data_start_index + 9 + offset].startswith("$"):
-                impuestos += f" {products[data_start_index + 9 + offset]}"
-                offset += 1
-            row.append(impuestos)  # IMPUESTOS
-        
-            row.append(products[data_start_index + 9 + offset])  # SUBTOTAL
-        
-            # Agregar la fila procesada a la matriz
-            matrix.append(row)
-        
-            # Actualizar el índice para la siguiente fila
-            data_start_index += 10 + offset
-                # Crear la matriz completa
-                # consolidated_lines = [header] + rows
-            
-                # Saltar la primera línea (encabezados) y procesar las líneas restantes
         raise UserError(f"{matrix}")
         parsed_products = []
         
