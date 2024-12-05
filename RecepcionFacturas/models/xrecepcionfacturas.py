@@ -70,6 +70,7 @@ class RecepFact(models.Model):
     
         # Saltar la primera línea (encabezados) y procesar las líneas restantes
         parsed_products = []
+        raise UserError(f"{consolidated_lines}")
         for line in consolidated_lines:
             if line.startswith("#"):  # Ignorar encabezados
                 continue
