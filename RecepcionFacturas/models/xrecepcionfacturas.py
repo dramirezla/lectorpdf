@@ -54,7 +54,7 @@ class RecepFact(models.Model):
         # Dividir el string en líneas
         products = products_matrix.strip().split("\n")
         # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
-                header = [
+        header = [
             products[0], 
             products[1], 
             products[2], 
