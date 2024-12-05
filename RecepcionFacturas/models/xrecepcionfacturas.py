@@ -26,7 +26,7 @@ class RecepFact(models.Model):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
         parsed_products = []
-        raise ValueError(f"{lineS}")
+        raise ValueError(f"{lines}")
         
         for line in lines:
             # Dividir cada línea en columnas (ajusta según el separador)
