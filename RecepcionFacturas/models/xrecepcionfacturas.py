@@ -56,10 +56,8 @@ class RecepFact(models.Model):
         }
         products_matrix = self.extract_field(pdf_text, 'acuerdo', 'CUFE')
         
-        # Llamada correcta a la función parse_products_matrix
+        # Llamada correcta a la función parse_products_matrix usando self
         parsed_products = self.parse_products_matrix(products_matrix)
-
-        raise UserError(f"{parsed_products}")
         
         for product in parsed_products:
             data['product_lines'].append({
