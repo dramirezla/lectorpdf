@@ -55,7 +55,7 @@ class RecepFact(models.Model):
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
-        
+        raise UserError(f"{lines}")
         # Consolidar líneas mal separadas
         consolidated_lines = []
         buffer = ""
@@ -89,7 +89,7 @@ class RecepFact(models.Model):
                 'IMPUESTOS': " ".join(columns[-3:-1]),  # Unir los impuestos
                 'SUBTOTAL': columns[-1],
             })
-        raise UserError(f"{parsed_products}")
+        # raise UserError(f"{parsed_products}")
         return parsed_products
 
 
