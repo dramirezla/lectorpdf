@@ -22,40 +22,37 @@ class RecepFact(models.Model):
 
 
     # Definir el método parse_products_matrix
-    def parse_products_matrix(self, products_matrix):
-        # Dividir el string en líneas
-        lines = products_matrix.strip().split("\n")
+def parse_products_matrix(self, products_matrix):
+    # Dividir el string en líneas
+    lines = products_matrix.strip().split("\n")
+    
+    # Consolidar encabezados y líneas mal separadas
+    consolidated_lines = []
+    buffer = ""
+
+    for line in lines:
+        if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
+            if buffer:
+                consolidated_lines.append(buffer.strip())
+                buffer = ""
+            buffer = line
+        else:
+            buffer += f" {line.strip()}"
+    
+    if buffer:  # Agregar la última línea consolidada
+        consolidated_lines.append(buffer.strip())
+
+    # Procesar líneas consolidadas
+    parsed_products = []
+    for line in consolidated_lines:
+        columns = line.split()
         
-        # Consolidar encabezados y líneas mal separadas
-        consolidated_lines = []
-        buffer = ""
-    
-        for line in lines:
-            if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
-                if buffer:
-                    consolidated_lines.append(buffer)
-                    buffer = ""
-                buffer = line
-            else:
-                buffer += f" {line.strip()}"
+        # Ignorar líneas vacías o con menos de 6 columnas
+        if len(columns) < 6:
+            continue  # O podrías lanzar un error personalizado si quieres reportar líneas incorrectas
         
-        if buffer:  # Agregar la última línea consolidada
-            consolidated_lines.append(buffer)
-    
-        # Procesar líneas consolidadas
-        parsed_products = []
-        for line in consolidated_lines:
-            columns = line.split()
-    
-            # Caso especial: Consolidar encabezados mal separados
-            if columns[0] == "#":
-                if "UNIDAD DE" in line:
-                    line = line.replace("UNIDAD DE MEDIDA", "UNIDAD_DE_MEDIDA")
-                columns = line.split()
-                continue  # Ignorar encabezados
-    
-            # Validar longitud mínima
-            # Mapear columnas
+        # Mapear columnas principales
+        try:
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
@@ -68,8 +65,11 @@ class RecepFact(models.Model):
                 'IMPUESTOS': columns[-2],
                 'SUBTOTAL': columns[-1],
             })
-        raise UserError(f"{parsed_products}")
-        return parsed_products
+        except IndexError:
+            raise ValueError(f"Línea con formato incorrecto: {line}")
+
+    return parsed_products
+
 
 
 
