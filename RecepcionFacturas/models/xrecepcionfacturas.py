@@ -54,50 +54,46 @@ class RecepFact(models.Model):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
         
-        # Consolidar encabezados y líneas mal separadas
+        # Consolidar líneas mal separadas en caso de que las descripciones abarquen varias líneas
         consolidated_lines = []
         buffer = ""
     
         for line in lines:
-            if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
-                if buffer:
+            if line.startswith("#") or (line[0].isdigit() and buffer):  # Comienza una nueva fila de productos
+                if buffer:  # Agregar línea anterior consolidada
                     consolidated_lines.append(buffer.strip())
-                    buffer = ""
                 buffer = line
             else:
                 buffer += f" {line.strip()}"
-        
         if buffer:  # Agregar la última línea consolidada
             consolidated_lines.append(buffer.strip())
     
-        # Procesar líneas consolidadas
+        # Saltar la primera línea (encabezados) y procesar las líneas restantes
         parsed_products = []
         for line in consolidated_lines:
-            columns = line.split()
-            
-            # Ignorar líneas vacías o con menos de 6 columnas
-            if len(columns) < 6:
-                continue  # O podrías lanzar un error personalizado si quieres reportar líneas incorrectas
-            
-            # Mapear columnas principales
-            try:
-                parsed_products.append({
-                    '#': columns[0],
-                    'CÓDIGO': columns[1],
-                    'DESCRIPCIÓN': " ".join(columns[2:-7]),  # Descripción puede abarcar varias columnas
-                    'UNIDAD DE MEDIDA': columns[-7],
-                    'CANTIDAD': columns[-6],
-                    'PRECIO UNITARIO': columns[-5],  # Precio y unitario consolidado
-                    'DESCUENTO': columns[-4],
-                    'CARGO': columns[-3],
-                    'IMPUESTOS': columns[-2],
-                    'SUBTOTAL': columns[-1],
-                })
-            except IndexError:
-                raise ValueError(f"Línea con formato incorrecto: {line}")
+            if line.startswith("#"):  # Ignorar encabezados
+                continue
     
-            raise ValueError(f"{parsed_products}")
+            columns = line.split()  # Dividir la línea en columnas
+    
+            # Validar que haya suficientes columnas para procesar
+    
+            # Mapear columnas correctamente
+            parsed_products.append({
+                '#': columns[0],
+                'CÓDIGO': columns[1],
+                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Asumimos que la descripción es todo antes de las últimas 8 columnas
+                'UNIDAD DE MEDIDA': columns[-8],
+                'CANTIDAD': columns[-7],
+                'PRECIO UNITARIO': columns[-6],  # Precio consolidado
+                'DESCUENTO': columns[-5],
+                'CARGO': columns[-4],
+                'IMPUESTOS': " ".join(columns[-3:-1]),  # Impuestos puede incluir varios términos
+                'SUBTOTAL': columns[-1],
+            })
+        raise UserError(f"{parsed_products}")
         return parsed_products
+
 
 
 
