@@ -67,40 +67,42 @@ class RecepFact(models.Model):
             products[11]
         ]
         
-        # Crear filas
-        rows = [
-            [
-                products[12],  # #
-                products[13],  # CÓDIGO
-                products[14],  # DESCRIPCIÓN
-                products[15],  # UNIDAD DE MEDIDA
-                products[16],  # CANTIDAD
-                products[17],  # PRECIO UNITARIO
-                products[18],  # DESCUENTO
-                products[19],  # CARGO
-                f"{products[20]} {products[21]}",  # IMPUESTOS
-                products[22]   # SUBTOTAL
-            ],
-            [
-                products[23],  # #
-                products[24],  # CÓDIGO
-                f"{products[25]} {products[26]}",  # DESCRIPCIÓN
-                products[27],  # UNIDAD DE MEDIDA
-                products[28],  # CANTIDAD
-                products[29],  # PRECIO UNITARIO
-                products[30],  # DESCUENTO
-                products[31],  # CARGO
-                products[32],  # IMPUESTOS
-                products[33]   # SUBTOTAL
-            ]
-        ]
+        # Inicializar la matriz final con el encabezado
+        consolidated_lines = [header]
         
+        # Procesar las filas dinámicamente
+        data_start_index = len(header)  # Índice donde comienzan los datos
+        while data_start_index < len(products):
+            # Extraer las celdas para la fila actual
+            row = products[data_start_index:data_start_index + len(header)]
+        
+            # Ajustar si la descripción o los impuestos tienen datos extendidos
+            # Combinar descripción extendida
+            if len(row) > 3 and not row[3].startswith("EA"):
+                row[2] += f" {row.pop(3)}"
+            # Combinar impuestos extendidos
+            if len(row) > 8 and not row[8].startswith("$"):
+                row[8] += f" {row.pop(8)}"
+        
+            # Limitar la fila al tamaño correcto
+            row = row[:len(header)]
+        
+            # Agregar la fila procesada a la matriz
+            consolidated_lines.append(row)
+        
+            # Mover al siguiente conjunto de datos
+            data_start_index += len(header)
+        
+        # Imprimir la matriz final
+        raise UserError(f"{consolidated_lines}")
+        for row in consolidated_lines:
+            print(row)
         # Crear la matriz completa
-        consolidated_lines = [header] + rows
+        # consolidated_lines = [header] + rows
     
         # Saltar la primera línea (encabezados) y procesar las líneas restantes
         parsed_products = []
-        raise UserError(f"{consolidated_lines}")
+        
         for line in consolidated_lines:
             if line.startswith("#"):  # Ignorar encabezados
                 continue
