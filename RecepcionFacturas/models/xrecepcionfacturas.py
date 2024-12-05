@@ -31,7 +31,9 @@ class RecepFact(models.Model):
         
         for row in rows:
             columns = row.split()  # Suponemos que las columnas están separadas por espacio
-            if len(columns) > 1:  # Asegurarse de que la fila contiene datos válidos
+            
+            # Validamos si la fila tiene el número esperado de columnas
+            if len(columns) >= 7:  # Ajusta este número según la cantidad mínima de columnas esperadas
                 product = {
                     'CÓDIGO': columns[0],
                     'DESCRIPCIÓN': columns[1],  # Suponemos que la descripción está en la segunda columna
@@ -40,12 +42,16 @@ class RecepFact(models.Model):
                     'PRECIO': columns[4],
                     'UNITARIO': columns[5],
                     'DESCUENTO': columns[6],
-                    'IMPUESTOS': columns[7:],  # El resto se considera como impuestos
+                    'IMPUESTOS': columns[7:] if len(columns) > 7 else [],  # Impuestos opcionales
                     'SUBTOTAL': columns[-1],  # Suponemos que el último valor es el subtotal
                 }
                 parsed_products.append(product)
-
+            else:
+                # Si no tiene suficientes columnas, puedes imprimir una advertencia o hacer algo más.
+                raise UserError(f"Fila con formato incorrecto: {row}")
+        
         return parsed_products
+
 
     def parse_invoice_data(self, pdf_text):
         """Parsea datos relevantes de la factura desde el texto."""
