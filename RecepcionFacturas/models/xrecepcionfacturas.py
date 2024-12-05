@@ -61,11 +61,14 @@ class RecepFact(models.Model):
         buffer = ""
     
         for line in lines:
-            if line[0].isdigit() and (buffer and not buffer[0].isdigit()):  # Nueva fila detectada
+            # Detecta una nueva fila si empieza con un número
+            if line[0].isdigit() and buffer:
                 consolidated_lines.append(buffer.strip())
                 buffer = line
             else:
                 buffer += f" {line.strip()}"
+        
+        # Agregar la última línea consolidada
         if buffer:
             consolidated_lines.append(buffer.strip())
     
@@ -74,22 +77,23 @@ class RecepFact(models.Model):
         for line in consolidated_lines:
             columns = line.split()  # Dividir la línea en columnas
     
-            # Validar que haya suficientes columnas para procesar
+            # Validar que haya suficientes columnas
             if len(columns) < 7:
                 raise ValueError(f"Línea con formato incorrecto: {line}")
-    
-            # Mapear únicamente las columnas necesarias
+            
+            # Mapear las columnas a las claves requeridas
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': " ".join(columns[2:-5]),  # Descripción hasta antes de las últimas 5 columnas
+                'DESCRIPCIÓN': " ".join(columns[2:-5]),  # Todo lo entre las primeras y últimas 5 columnas
                 'CANTIDAD': columns[-5],
                 'PRECIO UNITARIO': columns[-4],
-                'IMPUESTOS': " ".join(columns[-3:-1]),  # Impuestos agrupados
+                'IMPUESTOS': " ".join(columns[-3:-1]),  # Unir los impuestos
                 'SUBTOTAL': columns[-1],
             })
         raise UserError(f"{parsed_products}")
         return parsed_products
+
 
 
 
