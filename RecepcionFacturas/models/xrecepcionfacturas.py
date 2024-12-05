@@ -25,41 +25,44 @@ class RecepFact(models.Model):
     def parse_products_matrix(self, products_matrix):
         # Dividir el string en líneas
         lines = products_matrix.strip().split("\n")
+        
+        # Consolidar encabezados y líneas mal separadas
         consolidated_lines = []
+        buffer = ""
     
-        # Consolidar encabezados y columnas mal separadas
         for line in lines:
-            # Dividir por espacios iniciales
-            columns = line.split()
-    
-            # Detectar y unir encabezados que se separaron incorrectamente
-            if len(columns) > 0 and columns[0] in ["#", "1", "2"]:  # Detectar inicio de filas válidas
-                if consolidated_lines and "CÓDIGO" not in consolidated_lines[-1]:
-                    # Unir las partes divididas de encabezados como "UNIDAD DE MEDIDA"
-                    consolidated_lines[-1] = f"{consolidated_lines[-1]} {columns[0]}"
-                else:
-                    consolidated_lines.append(line)
+            if line.startswith("#") or line[0].isdigit():  # Nueva fila comienza
+                if buffer:
+                    consolidated_lines.append(buffer)
+                    buffer = ""
+                buffer = line
             else:
-                # Unir líneas que no comienzan con un número o encabezado
-                if consolidated_lines:
-                    consolidated_lines[-1] += f" {line}"
-                else:
-                    consolidated_lines.append(line)
+                buffer += f" {line.strip()}"
+        
+        if buffer:  # Agregar la última línea consolidada
+            consolidated_lines.append(buffer)
     
         # Procesar líneas consolidadas
         parsed_products = []
         for line in consolidated_lines:
-            columns = line.split()  # Volver a dividir tras consolidar
+            columns = line.split()
     
-            # Validar longitud mínima para evitar errores
+            # Caso especial: Consolidar encabezados mal separados
+            if columns[0] == "#":
+                if "UNIDAD DE" in line:
+                    line = line.replace("UNIDAD DE MEDIDA", "UNIDAD_DE_MEDIDA")
+                columns = line.split()
+                continue  # Ignorar encabezados
+    
+            # Validar longitud mínima
             if len(columns) < 10:
                 raise ValueError(f"Línea con formato incorrecto: {line}")
     
-            # Procesar y mapear columnas
+            # Mapear columnas
             parsed_products.append({
                 '#': columns[0],
                 'CÓDIGO': columns[1],
-                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Descripción puede ocupar varias columnas
+                'DESCRIPCIÓN': " ".join(columns[2:-8]),  # Descripción puede abarcar varias columnas
                 'UNIDAD DE MEDIDA': columns[-8],
                 'CANTIDAD': columns[-7],
                 'PRECIO': columns[-6],
@@ -69,7 +72,6 @@ class RecepFact(models.Model):
                 'IMPUESTOS': columns[-2],
                 'SUBTOTAL': columns[-1],
             })
-
         raise UserError(f"{parsed_products}")
         return parsed_products
 
