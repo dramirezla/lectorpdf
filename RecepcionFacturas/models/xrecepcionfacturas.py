@@ -115,25 +115,6 @@ class RecepFact(models.Model):
         return pdf_text
 
 
-    def parse_invoice_data(self, pdf_text):
-        """Parsea datos relevantes de la factura desde el texto."""
-        data = {
-            'supplier_name': self.extract_field(pdf_text, 'Nombre Comercial:', '\n'),
-            'supplier_nit': self.extract_field(pdf_text, 'NIT:', '\n'),
-            'product_lines': [],
-        }
-        products_matrix = self.extract_field(pdf_text, 'acuerdo', 'CUFE')
-        # Nueva expresión regular para productos
-        matches = re.findall(
-            r'(\d+)\s+(\d+)\s+([A-Za-z0-9\s]+(?:[A-Za-z0-9\s]+)*)\s+EA\s+([\d.,]+)\s+\$([\d.,]+)\s+\$([\d.,]+)\s+(IVA\s[\d.,]+%)?\s*([\d.,]+)\s+\$([\d.,]+)',
-            pdf_text,
-            re.DOTALL
-        )
-        ###raise UserError(f"{products_matrix}")
-        parsed_products = parse_products_matrix(products_matrix)
-        raise UserError(f"{parsed_products}")
-        #for product in parsed_products:
-            #print(product)
         
         for match in matches:
             description = match[2].strip().replace('\n', ' ')  # Unimos líneas de descripción
